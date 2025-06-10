@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 enum class dm_core_err {
     ok = 0,
     create_process = 1,
@@ -11,6 +13,7 @@ class dm_core
 {
     public:
         dm_core();
+        ~dm_core();
         dm_core_err run(const char* path);
 
     protected:

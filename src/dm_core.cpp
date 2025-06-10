@@ -7,6 +7,10 @@ dm_core::dm_core()
 {
 }
 
+dm_core::~dm_core()
+{
+}
+
 dm_core_err dm_core::run(const char* path)
 {
     STARTUPINFOA startup_info; 
@@ -16,6 +20,8 @@ dm_core_err dm_core::run(const char* path)
     ZeroMemory(&proc_info, sizeof(proc_info));
     ZeroMemory(&startup_info, sizeof(startup_info));
     startup_info.cb = sizeof(startup_info);
+
+    printf("D> starting process [%s]\n", path);
 
     if(!CreateProcessA(path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,NULL, &startup_info, &proc_info))
     {
