@@ -1,20 +1,13 @@
 #include <windows.h>
 #include <stdio.h>
 
-const char target_app[] = "C:\\Users\\Dron\\test\\test.exe";
+#include "dm_core.h"
 
-static void debug_program(const char* path);
-static void process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
-static PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
-
-int main(int argc, char* argv[])
+dm_core::dm_core()
 {
-    debug_program(target_app);
-
-    return 0;
 }
 
-void debug_program(const char* path)
+dm_core_err dm_core::run(const char* path)
 {
     STARTUPINFOA startup_info; 
     PROCESS_INFORMATION proc_info; 
@@ -27,7 +20,7 @@ void debug_program(const char* path)
     if(!CreateProcessA(path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,NULL, &startup_info, &proc_info))
     {
         printf("D> [ERROR] Failed to create process [%d]\n", path);
-        return;
+        return dm_core_err::create_process;
     }
     
     DEBUG_EVENT debug_event = {0};
@@ -40,7 +33,7 @@ void debug_program(const char* path)
             if(!ContinueDebugEvent(debug_event.dwProcessId, debug_event.dwThreadId, DBG_CONTINUE))
             {   
                 printf("D> [ERROR] ContinueDebugEvent");
-                return;
+                return dm_core_err::coninue_debug_event;
             }       
         }
         else
@@ -69,7 +62,7 @@ void debug_program(const char* path)
     }
 }
 
-char debug_event_id_name[][27] = {
+const char dm_core::debug_event_id_name[][27] = {
     "NULL", 
     "EXCEPTION_DEBUG_EVENT",      // 1
     "CREATE_THREAD_DEBUG_EVENT",  // 2
@@ -81,12 +74,12 @@ char debug_event_id_name[][27] = {
     "OUTPUT_DEBUG_STRING_EVENT",  // 8
     "RIP_EVENT" };                // 9
             
-void process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info)
+dm_core_err dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info)
 {
     if(event->dwDebugEventCode < EXCEPTION_DEBUG_EVENT || event->dwDebugEventCode > RIP_EVENT)
     {
         printf("D> [ERR] invalid debug event it [%d]\n", event->dwDebugEventCode);
-        return;
+        return dm_core_err::process_debug_event;
     }
 
     printf("D> debug event [%s]\n", debug_event_id_name[event->dwDebugEventCode]);
@@ -135,9 +128,11 @@ void process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CRE
         defualt:
             break;
     }
+
+    return dm_core_err::ok;
 }
 
-PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
+PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 {
     MEMORY_BASIC_INFORMATION mem_info;
     LPVOID base_addr = NULL;

@@ -7,9 +7,13 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${workspaceFolder}\\src\\main.cpp",
+                "${workspaceFolder}\\src\\dm_cmd.cpp",
+                "${workspaceFolder}\\src\\dm_core.cpp",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${workspaceFolder}\\bin\\${workspaceFolderBasename}.exe",
+                "-I",
+                "${workspaceFolder}\\inc\\"
             ],
             "options": {
                 "cwd": "${fileDirname}"
