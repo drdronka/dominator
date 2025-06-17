@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+#include "dm_log.h"
+
 enum class dm_core_err {
     ok = 0,
     create_process = 1,
@@ -12,7 +14,7 @@ enum class dm_core_err {
 class dm_core
 {
     public:
-        dm_core();
+        dm_core(dm_log* log_i);
         ~dm_core();
         dm_core_err start_process(const char* path);
         dm_core_err attach_to_process(UINT32 uuid);
@@ -27,4 +29,5 @@ class dm_core
             UINT32 wanted);
 
         static const char debug_event_id_name[][27];
+        dm_log* log;
 };

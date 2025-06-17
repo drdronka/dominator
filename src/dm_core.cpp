@@ -3,8 +3,9 @@
 
 #include "dm_core.h"
 
-dm_core::dm_core()
+dm_core::dm_core(dm_log* log_i)
 {
+    log = log_i;
 }
 
 dm_core::~dm_core()
@@ -21,11 +22,11 @@ dm_core_err dm_core::start_process(const char* path)
     ZeroMemory(&startup_info, sizeof(startup_info));
     startup_info.cb = sizeof(startup_info);
 
-    printf("D> starting process [%s]\n", path);
+    log->info("creating process [%s]", path);
 
     if(!CreateProcessA(path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,NULL, &startup_info, &proc_info))
     {
-        printf("D> [ERROR] Failed to create process [%d]\n", path);
+        log->error("failed to create process [%s]", path);
         return dm_core_err::create_process;
     }
     
@@ -38,13 +39,13 @@ dm_core_err dm_core::start_process(const char* path)
 
             if(!ContinueDebugEvent(debug_event.dwProcessId, debug_event.dwThreadId, DBG_CONTINUE))
             {   
-                printf("D> [ERROR] ContinueDebugEvent");
+                log->error("continue debug event failed");
                 return dm_core_err::coninue_debug_event;
             }       
         }
         else
         {
-            printf("D> no event\n");
+            log->info("no event");
 
             static UINT8 scan_done = false;
             if(!scan_done)
@@ -58,7 +59,7 @@ dm_core_err dm_core::start_process(const char* path)
                     WriteProcessMemory(proc_info.hProcess, wanted_addr, &new_val, sizeof(new_val), &write_size);
                     if(write_size == sizeof(new_val))
                     {
-                        printf("D> written [%d] to [0x%x]\n", new_val, wanted_addr);
+                        log->info("written [%d] to [0x%x]", new_val, wanted_addr);
                     }
                 }
 
@@ -89,11 +90,11 @@ dm_core_err dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION
 {
     if(event->dwDebugEventCode < EXCEPTION_DEBUG_EVENT || event->dwDebugEventCode > RIP_EVENT)
     {
-        printf("D> [ERR] invalid debug event it [%d]\n", event->dwDebugEventCode);
+        log->error("invalid debug event it [%d]", event->dwDebugEventCode);
         return dm_core_err::process_debug_event;
     }
 
-    printf("D> debug event [%s]\n", debug_event_id_name[event->dwDebugEventCode]);
+    log->info("debug event [%s]", debug_event_id_name[event->dwDebugEventCode]);
     switch(event->dwDebugEventCode)
     {
         case EXCEPTION_DEBUG_EVENT:
@@ -129,7 +130,7 @@ dm_core_err dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION
                 ds_info->nDebugStringLength,
                 NULL);
 
-            printf("D> debug message [%s]\n", buff);
+            log->info("debug message [%s]", buff);
             free(buff);
             break;
         }
@@ -151,7 +152,7 @@ PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
     UINT32 size_commited = 0;
     PVOID wanted_addr = 0;
 
-    printf("D> memory scan: wanted [%d]\n", wanted);
+    log->info("memory scan: wanted [%d]", wanted);
     while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
     {
         if(mem_info.State == MEM_COMMIT)
@@ -178,7 +179,7 @@ PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
             {
                 if(reg_mem[n] == wanted)
                 {
-                    printf("D> wanted [%d] found at [0x%x]\n", wanted, (mem_info.BaseAddress + (n * 4)));
+                    log->info("wanted [%d] found at [0x%x]", wanted, (mem_info.BaseAddress + (n * 4)));
                     wanted_addr = mem_info.BaseAddress + (n * 4);
                 }
             }
@@ -191,8 +192,8 @@ PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
         
         base_addr = (LPVOID)((DWORD_PTR)mem_info.BaseAddress + mem_info.RegionSize);
     }
-    printf("D> memory scanned [%d] KB\n", size_commited / 1024);
-    printf("D> wanted addr [0x%x]\n", wanted_addr);
+    log->info("memory scanned [%d] KB", size_commited / 1024);
+    log->info("wanted addr [0x%x]", wanted_addr);
 
     return wanted_addr;
 }
