@@ -11,7 +11,7 @@ dm_core::~dm_core()
 {
 }
 
-dm_core_err dm_core::run(const char* path)
+dm_core_err dm_core::start_process(const char* path)
 {
     STARTUPINFOA startup_info; 
     PROCESS_INFORMATION proc_info; 
@@ -66,6 +66,11 @@ dm_core_err dm_core::run(const char* path)
             }
         }
     }
+}
+
+dm_core_err dm_core::attach_to_process(UINT32 UUID)
+{
+    return dm_core_err::ok;
 }
 
 const char dm_core::debug_event_id_name[][27] = {

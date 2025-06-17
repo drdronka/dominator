@@ -14,7 +14,8 @@ class dm_core
     public:
         dm_core();
         ~dm_core();
-        dm_core_err run(const char* path);
+        dm_core_err start_process(const char* path);
+        dm_core_err attach_to_process(UINT32 uuid);
 
     protected:
         dm_core_err process_debug_event(

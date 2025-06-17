@@ -6,8 +6,6 @@
 
 #define CMD_SIZE 256
 
-const char target_app[] = "C:\\Users\\Dron\\test\\test.exe";
-
 dm_cmd::dm_cmd()
 {
     core = new dm_core();
@@ -16,7 +14,7 @@ dm_cmd::dm_cmd()
 dm_cmd::dm_cmd(const char* path)
 {
     core = new dm_core();
-    core->run(path);
+    core->start_process(path);
 }
 
 dm_cmd::~dm_cmd()
@@ -44,7 +42,7 @@ void dm_cmd::console()
         if(!strncmp(cmd, "run", strlen("run")))
         {
             arg_strip(cmd + strlen("run") + 1, buff);
-            core->run(buff);
+            core->start_process(buff);
         }
         else if(!strncmp(cmd, "exit", strlen("exit")))
         {
