@@ -1,4 +1,4 @@
-#include "dm_cmd.h"
+#include "dm_console.h"
 #include "dm_log.h"
 
 #include <stdio.h>
@@ -7,18 +7,22 @@ int main(int argc, char* argv[])
 {
     dm_log* log = new dm_log();
     dm_core* core = new dm_core(log);
-    dm_cmd* cmd;
+    dm_console* console;
 
     if(argc > 1)
     {
-        cmd = new dm_cmd(log, core, argv[1]);
+        console = new dm_console(log, core, argv[1]);
     }
     else
     {
-        cmd = new dm_cmd(log, core);
+        console = new dm_console(log, core);
     }
 
-    cmd->console();
+    console->run();
+
+    delete console;
+    delete core;
+    delete log;
 
     return 0;
 }

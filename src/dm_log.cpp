@@ -3,13 +3,14 @@
 
 #include "dm_log.h"
 
-#define DEFAULT_LOG_LEVEL dm_log_level::debug
-#define DEFAULT_LOG_FORMA dm_log_format::clean
+#define DEFAULT_LOG_LEVEL  dm_log_level::debug
+#define DEFAULT_LOG_FORMAT dm_log_format::clean
 #define LOG_PREFIX        "D> "
 
 dm_log::dm_log()
 {
     log_level = DEFAULT_LOG_LEVEL;
+    log_format = DEFAULT_LOG_FORMAT;
 }
 
 dm_log::dm_log(dm_log_level level, dm_log_format format)
@@ -18,9 +19,13 @@ dm_log::dm_log(dm_log_level level, dm_log_format format)
     log_format = format;
 }
 
+dm_log::~dm_log()
+{
+}
+
 void dm_log::set_level(dm_log_level level)
 {
-    info("set log level [%d]", level);
+    printf("set log level [%d]", level);
     log_level = level;
 }
 

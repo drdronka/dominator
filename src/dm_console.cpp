@@ -1,31 +1,31 @@
 #include <stdio.h>
 #include <windows.h>
 
-#include "dm_cmd.h"
+#include "dm_console.h"
 #include "dm_log.h"
 #include "dm_core.h"
 
 #define CMD_SIZE 256
 
-dm_cmd::dm_cmd(dm_log* log_i, dm_core* core_i)
+dm_console::dm_console(dm_log* log_i, dm_core* core_i)
 {
     log = log_i;
     core = core_i;
 }
 
-dm_cmd::dm_cmd(dm_log* log_i, dm_core* core_i, const char* path)
+dm_console::dm_console(dm_log* log_i, dm_core* core_i, const char* path)
 {
     log = log_i;
     core = core_i;
     core->start_process(path);
 }
 
-dm_cmd::~dm_cmd()
+dm_console::~dm_console()
 {
     delete core;
 }
 
-void dm_cmd::console()
+void dm_console::run()
 {
     UINT8 loop_exit = 0;
 
@@ -41,21 +41,21 @@ void dm_cmd::console()
 
         if(!strncmp(cmd, "run", strlen("run")))
         {
-            if(get_arg(cmd, 1, buff) == dm_cmd_err::ok)
+            if(get_arg(cmd, 1, buff) == dm_console_err::ok)
             {
                 core->start_process(buff);
             }
         }
         else if(!strncmp(cmd, "ll", strlen("ll")))
         {
-            if(get_arg(cmd, 1, buff) == dm_cmd_err::ok)
+            if(get_arg(cmd, 1, buff) == dm_console_err::ok)
             {
                 log->set_level((dm_log_level)atoi(buff));
             }
         }
         else if(!strncmp(cmd, "lf", strlen("lf")))
         {
-            if(get_arg(cmd, 1, buff) == dm_cmd_err::ok)
+            if(get_arg(cmd, 1, buff) == dm_console_err::ok)
             {
                 log->set_format((dm_log_format)atoi(buff));
             }
@@ -65,7 +65,6 @@ void dm_cmd::console()
             if(log->get_level() < dm_log_level::info)
             {
                 log->set_level(dm_log_level::info);
-                log->info("log level set [%d]", dm_log_level::info);
             }
             
             log->info("commands:");
@@ -86,7 +85,7 @@ void dm_cmd::console()
     }
 }
 
-dm_cmd_err dm_cmd::get_arg(char* cmd, UINT32 arg_n, char* arg)
+dm_console_err dm_console::get_arg(char* cmd, UINT32 arg_n, char* arg)
 {
     if(arg_n == 0)
     {
@@ -99,7 +98,7 @@ dm_cmd_err dm_cmd::get_arg(char* cmd, UINT32 arg_n, char* arg)
 
         log->debug("arg extracted [%s]", arg);
 
-        return dm_cmd_err::ok;
+        return dm_console_err::ok;
     }
     else
     {
@@ -121,7 +120,7 @@ dm_cmd_err dm_cmd::get_arg(char* cmd, UINT32 arg_n, char* arg)
         else
         {
             log->error("too few arguments");
-            return dm_cmd_err::get_arg;
+            return dm_console_err::get_arg;
         }
     }
 }

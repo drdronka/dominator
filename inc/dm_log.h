@@ -19,18 +19,18 @@ class dm_log
     public:
         dm_log();
         dm_log(dm_log_level level, dm_log_format format);
+        ~dm_log();
         
         void set_level(dm_log_level level);
         void set_format(dm_log_format format);
         dm_log_level get_level();
         dm_log_format get_format();
 
-        // format, new line added
         void debug(const char* format, ...);
         void info(const char* format, ...);
         void error(const char* format, ...);
 
-        // no format, no new line
+        // no format, no newline
         void debug_naked(const char* format, ...);
         void info_naked(const char* format, ...);
         void error_naked(const char* format, ...);
