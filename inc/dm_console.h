@@ -19,7 +19,8 @@ class dm_console
         void run();
 
     protected:
-        dm_console_err get_arg(char* cmd, UINT32 arg_n, char* arg);    
+        dm_console_err get_arg(char const* const cmd, UINT32 arg_n, char* arg);    
+        BOOLEAN is_arg(char const* const cmd, char const* const arg);
         
         dm_core* core;
         dm_log* log;

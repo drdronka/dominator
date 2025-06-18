@@ -4,63 +4,70 @@
 #include "dm_console.h"
 #include "dm_log.h"
 #include "dm_core.h"
+#include "dm_cmd.h"
 
 #define CMD_SIZE 256
 
-dm_console::dm_console(dm_log* log_i, dm_core* core_i)
+dm_console::dm_console(dm_log* log, dm_core* core)
 {
-    log = log_i;
-    core = core_i;
+    this->log = log;
+    this->core = core;
 }
 
-dm_console::dm_console(dm_log* log_i, dm_core* core_i, const char* path)
+dm_console::dm_console(dm_log* log, dm_core* core, const char* path)
 {
-    log = log_i;
-    core = core_i;
-    core->start_process(path);
+    this->log = log;
+    this->core = core;
+    this->core->start_process(path);
 }
 
 dm_console::~dm_console()
 {
-    delete core;
 }
 
 void dm_console::run()
 {
-    UINT8 loop_exit = 0;
-
     log->info("dominator cmd line");
 
+    BOOLEAN loop_exit = false;
     while(!loop_exit)
     {
+        char input[CMD_SIZE];
         char cmd[CMD_SIZE];
-        char buff[CMD_SIZE];
+        char arg[CMD_SIZE];
 
-        fgets(cmd, CMD_SIZE, stdin);
-        cmd[strlen(cmd)-1]=0;
+        fgets(input, CMD_SIZE, stdin);
 
-        if(!strncmp(cmd, "run", strlen("run")))
+        if(get_arg(input, 0, cmd) != dm_console_err::ok)
         {
-            if(get_arg(cmd, 1, buff) == dm_console_err::ok)
+            log->error("failed to extract cmd form input");
+            continue;
+        }
+
+        if(is_arg(cmd, "run"))
+        {
+            if(get_arg(input, 1, arg) == dm_console_err::ok)
             {
-                core->start_process(buff);
+                //core->start_process(buff);
+                core->cmd_list->add((dm_cmd*)new dm_cmd_start_process(arg));
+                core->cmd_loop();
             }
         }
-        else if(!strncmp(cmd, "ll", strlen("ll")))
+        else if(is_arg(input, "ll"))
         {
-            if(get_arg(cmd, 1, buff) == dm_console_err::ok)
+            if(get_arg(input, 1, arg) == dm_console_err::ok)
             {
-                log->set_level((dm_log_level)atoi(buff));
+                log->set_level((dm_log_level)atoi(arg));
             }
         }
-        else if(!strncmp(cmd, "lf", strlen("lf")))
+        else if(is_arg(input, "lf"))
         {
-            if(get_arg(cmd, 1, buff) == dm_console_err::ok)
+            if(get_arg(input, 1, arg) == dm_console_err::ok)
             {
-                log->set_format((dm_log_format)atoi(buff));
+                log->set_format((dm_log_format)atoi(arg));
             }
         }   
-        else if(!strncmp(cmd, "help", strlen("help")))
+        else if(is_arg(input, "help"))
         {
             if(log->get_level() < dm_log_level::info)
             {
@@ -71,12 +78,12 @@ void dm_console::run()
             log->info("run <path>  - start process");
             log->info("ll <level>  - set log level (0 none, 1 error, 2 info, 3 debug)");
             log->info("lf <format> - set log format (0 clean, 1 with prefix)");
-            log->info("help        - this info");
+            log->info("help        - this help page");
             log->info("exit        - stop/detach and exit");
         }
-        else if(!strncmp(cmd, "exit", strlen("exit")))
+        else if(is_arg(cmd, "exit"))
         {
-            loop_exit = 1;
+            loop_exit = true;
         }
         else 
         {
@@ -85,16 +92,19 @@ void dm_console::run()
     }
 }
 
-dm_console_err dm_console::get_arg(char* cmd, UINT32 arg_n, char* arg)
+dm_console_err dm_console::get_arg(char const* const cmd, UINT32 arg_n, char* arg)
 {
     if(arg_n == 0)
     {
         UINT32 n = 0;
         
-        while(cmd[n]  != ' ' && cmd[n++] != 0);
+        while(cmd[n] != ' ' && cmd[n] != 0 && cmd[n] != '\n')
+        {
+            n++;
+        }
 
-        strncpy(arg, cmd, n-1);        
-        arg[n-1] = 0;
+        strncpy(arg, cmd, n);        
+        arg[n] = 0;
 
         log->debug("arg extracted [%s]", arg);
 
@@ -123,4 +133,14 @@ dm_console_err dm_console::get_arg(char* cmd, UINT32 arg_n, char* arg)
             return dm_console_err::get_arg;
         }
     }
+}
+
+BOOLEAN dm_console::is_arg(char const* const cmd, char const* const arg)
+{
+    if(!strncmp(cmd, arg, strlen(arg)))
+    {
+        return true;
+    }
+
+    return false;
 }

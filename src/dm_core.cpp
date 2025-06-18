@@ -3,13 +3,38 @@
 
 #include "dm_core.h"
 
-dm_core::dm_core(dm_log* log_i)
+dm_core::dm_core(dm_log* log)
 {
-    log = log_i;
+    this->log = log;
+    cmd_list = new dm_cmd_list(log);
 }
 
 dm_core::~dm_core()
 {
+    delete cmd_list;
+}
+
+void dm_core::cmd_loop()
+{
+    BOOLEAN loop_exit = false;
+    while(!loop_exit)
+    {
+        dm_cmd* cmd = cmd_list->get();
+        if(cmd != nullptr)
+        {
+            switch(cmd->type)
+            {
+                case dm_cmd_type::start_process:
+                    start_process(((dm_cmd_start_process*)cmd)->path);
+                    break;
+
+                default:
+                    log->error("unknown cmd [%d]", cmd->type);
+            }
+            
+            cmd_list->next();
+        }
+    }
 }
 
 dm_core_err dm_core::start_process(const char* path)
@@ -45,6 +70,8 @@ dm_core_err dm_core::start_process(const char* path)
         }
         else
         {
+
+#if 0            
             log->info("no event");
 
             static UINT8 scan_done = false;
@@ -65,6 +92,7 @@ dm_core_err dm_core::start_process(const char* path)
 
                 scan_done = true;
             }
+#endif            
         }
     }
 }

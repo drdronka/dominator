@@ -25,7 +25,7 @@ dm_log::~dm_log()
 
 void dm_log::set_level(dm_log_level level)
 {
-    printf("set log level [%d]", level);
+    printf("set log level [%d]\n", level);
     log_level = level;
 }
 
@@ -36,7 +36,7 @@ dm_log_level dm_log::get_level()
 
 void dm_log::set_format(dm_log_format format)
 {
-    info("set log format [%d]", format);
+    printf("set log format [%d]\n", format);
     log_format = format;
 }
 

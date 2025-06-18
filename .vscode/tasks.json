@@ -12,6 +12,7 @@
                 "${workspaceFolder}\\src\\dm_log.cpp",
                 "${workspaceFolder}\\src\\dm_core.cpp",
                 "${workspaceFolder}\\src\\dm_console.cpp",
+                "${workspaceFolder}\\src\\dm_cmd.cpp",
                 "-o",
                 "${workspaceFolder}\\bin\\${workspaceFolderBasename}.exe",
                 "-I",

@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "dm_log.h"
+#include "dm_cmd.h"
 
 enum class dm_core_err {
     ok = 0,
@@ -16,8 +17,12 @@ class dm_core
     public:
         dm_core(dm_log* log_i);
         ~dm_core();
+
+        void cmd_loop();
         dm_core_err start_process(const char* path);
         dm_core_err attach_to_process(UINT32 uuid);
+
+        dm_cmd_list* cmd_list;
 
     protected:
         dm_core_err process_debug_event(
