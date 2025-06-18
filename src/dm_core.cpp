@@ -14,9 +14,14 @@ dm_core::~dm_core()
     delete cmd_list;
 }
 
+void dm_core::add_cmd(dm_cmd* cmd)
+{
+    cmd_list->add(cmd);
+}
+
 void dm_core::cmd_loop()
 {
-    BOOLEAN loop_exit = false;
+    bool loop_exit = false;
     while(!loop_exit)
     {
         dm_cmd* cmd = cmd_list->get();
@@ -25,19 +30,19 @@ void dm_core::cmd_loop()
             switch(cmd->type)
             {
                 case dm_cmd_type::start_process:
-                    start_process(((dm_cmd_start_process*)cmd)->path);
+                    start_process((dm_cmd_start_process*)cmd);
                     break;
 
                 default:
                     log->error("unknown cmd [%d]", cmd->type);
             }
-            
+
             cmd_list->next();
         }
     }
 }
 
-dm_core_err dm_core::start_process(const char* path)
+bool dm_core::start_process(dm_cmd_start_process* cmd)
 {
     STARTUPINFOA startup_info; 
     PROCESS_INFORMATION proc_info; 
@@ -47,12 +52,12 @@ dm_core_err dm_core::start_process(const char* path)
     ZeroMemory(&startup_info, sizeof(startup_info));
     startup_info.cb = sizeof(startup_info);
 
-    log->info("creating process [%s]", path);
+    log->info("creating process [%s]", cmd->path);
 
-    if(!CreateProcessA(path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,NULL, &startup_info, &proc_info))
+    if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,NULL, &startup_info, &proc_info))
     {
-        log->error("failed to create process [%s]", path);
-        return dm_core_err::create_process;
+        log->error("failed to create process [%s]", cmd->path);
+        return false;
     }
     
     DEBUG_EVENT debug_event = {0};
@@ -65,7 +70,7 @@ dm_core_err dm_core::start_process(const char* path)
             if(!ContinueDebugEvent(debug_event.dwProcessId, debug_event.dwThreadId, DBG_CONTINUE))
             {   
                 log->error("continue debug event failed");
-                return dm_core_err::coninue_debug_event;
+                return false;
             }       
         }
         else
@@ -97,9 +102,9 @@ dm_core_err dm_core::start_process(const char* path)
     }
 }
 
-dm_core_err dm_core::attach_to_process(UINT32 UUID)
+bool dm_core::attach_to_process(UINT32 UUID)
 {
-    return dm_core_err::ok;
+    return false;
 }
 
 const char dm_core::debug_event_id_name[][27] = {
@@ -114,12 +119,12 @@ const char dm_core::debug_event_id_name[][27] = {
     "OUTPUT_DEBUG_STRING_EVENT",  // 8
     "RIP_EVENT" };                // 9
             
-dm_core_err dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info)
+bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info)
 {
     if(event->dwDebugEventCode < EXCEPTION_DEBUG_EVENT || event->dwDebugEventCode > RIP_EVENT)
     {
         log->error("invalid debug event it [%d]", event->dwDebugEventCode);
-        return dm_core_err::process_debug_event;
+        return false;
     }
 
     log->info("debug event [%s]", debug_event_id_name[event->dwDebugEventCode]);
@@ -169,7 +174,7 @@ dm_core_err dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION
             break;
     }
 
-    return dm_core_err::ok;
+    return true;
 }
 
 PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)

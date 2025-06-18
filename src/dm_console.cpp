@@ -14,13 +14,6 @@ dm_console::dm_console(dm_log* log, dm_core* core)
     this->core = core;
 }
 
-dm_console::dm_console(dm_log* log, dm_core* core, const char* path)
-{
-    this->log = log;
-    this->core = core;
-    this->core->start_process(path);
-}
-
 dm_console::~dm_console()
 {
 }
@@ -29,7 +22,7 @@ void dm_console::run()
 {
     log->info("dominator cmd line");
 
-    BOOLEAN loop_exit = false;
+    bool loop_exit = false;
     while(!loop_exit)
     {
         char input[CMD_SIZE];
@@ -38,7 +31,7 @@ void dm_console::run()
 
         fgets(input, CMD_SIZE, stdin);
 
-        if(get_arg(input, 0, cmd) != dm_console_err::ok)
+        if(!get_arg(input, 0, cmd))
         {
             log->error("failed to extract cmd form input");
             continue;
@@ -46,23 +39,22 @@ void dm_console::run()
 
         if(is_arg(cmd, "run"))
         {
-            if(get_arg(input, 1, arg) == dm_console_err::ok)
+            if(get_arg(input, 1, arg))
             {
-                //core->start_process(buff);
-                core->cmd_list->add((dm_cmd*)new dm_cmd_start_process(arg));
+                core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg));
                 core->cmd_loop();
             }
         }
         else if(is_arg(input, "ll"))
         {
-            if(get_arg(input, 1, arg) == dm_console_err::ok)
+            if(get_arg(input, 1, arg))
             {
                 log->set_level((dm_log_level)atoi(arg));
             }
         }
         else if(is_arg(input, "lf"))
         {
-            if(get_arg(input, 1, arg) == dm_console_err::ok)
+            if(get_arg(input, 1, arg))
             {
                 log->set_format((dm_log_format)atoi(arg));
             }
@@ -92,7 +84,7 @@ void dm_console::run()
     }
 }
 
-dm_console_err dm_console::get_arg(char const* const cmd, UINT32 arg_n, char* arg)
+bool dm_console::get_arg(char const* const cmd, UINT32 arg_n, char* arg)
 {
     if(arg_n == 0)
     {
@@ -108,7 +100,7 @@ dm_console_err dm_console::get_arg(char const* const cmd, UINT32 arg_n, char* ar
 
         log->debug("arg extracted [%s]", arg);
 
-        return dm_console_err::ok;
+        return true;
     }
     else
     {
@@ -130,12 +122,12 @@ dm_console_err dm_console::get_arg(char const* const cmd, UINT32 arg_n, char* ar
         else
         {
             log->error("too few arguments");
-            return dm_console_err::get_arg;
+            return false;
         }
     }
 }
 
-BOOLEAN dm_console::is_arg(char const* const cmd, char const* const arg)
+bool dm_console::is_arg(char const* const cmd, char const* const arg)
 {
     if(!strncmp(cmd, arg, strlen(arg)))
     {

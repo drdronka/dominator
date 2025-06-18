@@ -18,21 +18,17 @@ class dm_core
         dm_core(dm_log* log_i);
         ~dm_core();
 
+        void add_cmd(dm_cmd* cmd);
         void cmd_loop();
-        dm_core_err start_process(const char* path);
-        dm_core_err attach_to_process(UINT32 uuid);
-
-        dm_cmd_list* cmd_list;
 
     protected:
-        dm_core_err process_debug_event(
-            DEBUG_EVENT* event, 
-            PROCESS_INFORMATION* proc_info, 
-            CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
-        PVOID scan_memory(
-            PROCESS_INFORMATION* proc_info, 
-            UINT32 wanted);
+        bool start_process(dm_cmd_start_process* cmd);
+        bool attach_to_process(UINT32 uuid);
+        bool process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
+        PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
 
-        static const char debug_event_id_name[][27];
         dm_log* log;
+        dm_cmd_list* cmd_list;
+
+        static char const debug_event_id_name[][27];
 };
