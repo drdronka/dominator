@@ -6,7 +6,8 @@
 
 enum class dm_cmd_type
 {
-    start_process = 0,
+    exit_cmd_loop = 0,
+    start_process = 1,
     attach_to_process = 1,
     mem_scan = 2,
 };
@@ -31,6 +32,13 @@ class dm_cmd_list
 
     protected:
         dm_log* log;
+};
+
+class dm_cmd_exit_cmd_loop : dm_cmd
+{
+    public:
+        dm_cmd_exit_cmd_loop();
+        ~dm_cmd_exit_cmd_loop();
 };
 
 class dm_cmd_start_process : dm_cmd

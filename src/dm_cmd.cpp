@@ -2,21 +2,6 @@
 
 #include "dm_cmd.h"
 
-dm_cmd_start_process::dm_cmd_start_process(char const* const path)
-{
-    UINT32 len = strlen(path);
-    this->path = new char[len+1];
-    strncpy(this->path, path, len);
-    this->path[len] = 0;
-
-    type = dm_cmd_type::start_process;
-}
-
-dm_cmd_start_process::~dm_cmd_start_process()
-{
-    delete[] path;
-}
-
 dm_cmd_list::dm_cmd_list(dm_log* log)
 {
     this->log = log;
@@ -63,4 +48,28 @@ void dm_cmd_list::next()
         delete cmd;
         cmd_list.pop_front();
     }
+}
+
+dm_cmd_exit_cmd_loop::dm_cmd_exit_cmd_loop()
+{
+    type = dm_cmd_type::exit_cmd_loop;
+}
+
+dm_cmd_exit_cmd_loop::~dm_cmd_exit_cmd_loop()
+{
+}
+
+dm_cmd_start_process::dm_cmd_start_process(char const* const path)
+{
+    UINT32 len = strlen(path);
+    this->path = new char[len+1];
+    strncpy(this->path, path, len);
+    this->path[len] = 0;
+
+    type = dm_cmd_type::start_process;
+}
+
+dm_cmd_start_process::~dm_cmd_start_process()
+{
+    delete[] path;
 }

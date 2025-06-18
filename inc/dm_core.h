@@ -2,6 +2,9 @@
 
 #include <windows.h>
 
+#include <thread>
+#include <atomic>
+
 #include "dm_log.h"
 #include "dm_cmd.h"
 
@@ -19,7 +22,9 @@ class dm_core
         ~dm_core();
 
         void add_cmd(dm_cmd* cmd);
-        void cmd_loop();
+        void start_cmd_loop();
+        void stop_cmd_loop();
+        void cmd_loop(); // started by dm_core_cmd_loop(), not to be used directly
 
     protected:
         bool start_process(dm_cmd_start_process* cmd);
@@ -29,6 +34,10 @@ class dm_core
 
         dm_log* log;
         dm_cmd_list* cmd_list;
+        HANDLE cmd_thread;
+        DWORD cmd_thread_id;
 
         static char const debug_event_id_name[][27];
 };
+
+static DWORD WINAPI dm_core_cmd_loop(LPVOID ref);

@@ -22,6 +22,10 @@ void dm_console::run()
 {
     log->info("dominator cmd line");
 
+    core->start_cmd_loop();
+    core->stop_cmd_loop();
+    core->start_cmd_loop();
+
     bool loop_exit = false;
     while(!loop_exit)
     {
@@ -42,21 +46,20 @@ void dm_console::run()
             if(get_arg(input, 1, arg))
             {
                 core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg));
-                core->cmd_loop();
             }
         }
         else if(is_arg(input, "ll"))
         {
             if(get_arg(input, 1, arg))
             {
-                log->set_level((dm_log_level)atoi(arg));
+                log->set_level((dm_log_level)strtol(arg, NULL, 0));
             }
         }
         else if(is_arg(input, "lf"))
         {
             if(get_arg(input, 1, arg))
             {
-                log->set_format((dm_log_format)atoi(arg));
+                log->set_format((dm_log_format)strtol(arg, NULL, 0));
             }
         }   
         else if(is_arg(input, "help"))
@@ -75,6 +78,7 @@ void dm_console::run()
         }
         else if(is_arg(cmd, "exit"))
         {
+            core->stop_cmd_loop();
             loop_exit = true;
         }
         else 

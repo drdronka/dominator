@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
+#include <thread>
+#include <atomic>
 
 #include "dm_core.h"
 
@@ -7,10 +9,13 @@ dm_core::dm_core(dm_log* log)
 {
     this->log = log;
     cmd_list = new dm_cmd_list(log);
+    cmd_thread = NULL;
+    cmd_thread_id = 0;
 }
 
 dm_core::~dm_core()
 {
+    stop_cmd_loop();
     delete cmd_list;
 }
 
@@ -19,8 +24,55 @@ void dm_core::add_cmd(dm_cmd* cmd)
     cmd_list->add(cmd);
 }
 
+void dm_core::start_cmd_loop()
+{
+    if(!cmd_thread)
+    {
+        cmd_thread = CreateThread(
+            nullptr,              // Default security attributes
+            0,                    // Default stack size
+            dm_core_cmd_loop,     // Thread function name
+            this,                 // Parameter passed to thread
+            0,                    // Default creation flags
+            &cmd_thread_id);      // Thread ID
+    }
+    else
+    {
+        log->error("cmd loop already running");
+    }
+}
+
+void dm_core::stop_cmd_loop()
+{
+    if(cmd_thread)
+    {
+        add_cmd((dm_cmd*)new dm_cmd_exit_cmd_loop());
+
+        DWORD result;
+        do
+        {
+            result = WaitForSingleObject(cmd_thread, 0);
+        }
+        while(result != WAIT_OBJECT_0);
+
+        cmd_thread = NULL;
+        cmd_thread_id = 0;
+
+        log->info("cmd loop stopped");
+    }
+}
+
+static DWORD WINAPI dm_core_cmd_loop(LPVOID ref)
+{
+    dm_core* core = reinterpret_cast<dm_core*>(ref);
+    core->cmd_loop();
+    return 0;
+}
+
 void dm_core::cmd_loop()
 {
+    log->info("cmd loop started");
+
     bool loop_exit = false;
     while(!loop_exit)
     {
@@ -29,6 +81,10 @@ void dm_core::cmd_loop()
         {
             switch(cmd->type)
             {
+                case dm_cmd_type::exit_cmd_loop:                    
+                    loop_exit = true;
+                    break;
+
                 case dm_cmd_type::start_process:
                     start_process((dm_cmd_start_process*)cmd);
                     break;

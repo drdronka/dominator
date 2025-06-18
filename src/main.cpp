@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     dm_console* console = new dm_console(log, core);
     console->run();
 
-    delete console;
+    //delete console;
     delete core;
     delete log;
 
