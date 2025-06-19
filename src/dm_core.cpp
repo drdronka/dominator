@@ -1,7 +1,5 @@
 #include <windows.h>
 #include <stdio.h>
-#include <thread>
-#include <atomic>
 
 #include "dm_core.h"
 
@@ -59,7 +57,7 @@ void dm_core::stop_cmd_loop()
         cmd_thread = NULL;
         cmd_thread_id = 0;
 
-        log->debug("cmd loop stopped");
+        log->debug("core: cmd loop stopped");
     }
 }
 
@@ -72,7 +70,7 @@ static DWORD WINAPI dm_core_cmd_loop(LPVOID ref)
 
 void dm_core::cmd_loop()
 {
-    log->debug("cmd loop started");
+    log->debug("core: cmd_loop");
 
     bool loop_exit = false;
     while(!loop_exit)
@@ -117,31 +115,6 @@ void dm_core::cmd_loop()
                 log->error("continue debug event failed");
             }       
         }
-    }
-}
-
-void dm_core::start_process(dm_cmd_start_process* cmd)
-{
-    if(!attached)
-    {
-        ZeroMemory(&proc_info, sizeof(proc_info));
-        ZeroMemory(&startup_info, sizeof(startup_info));
-        startup_info.cb = sizeof(startup_info);
-
-        log->info("creating process [%s]", cmd->path);
-
-        if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, NULL,NULL, &startup_info, &proc_info))
-        {
-            log->error("failed to create process [%s]", cmd->path);
-        }
-        else
-        {
-            this->attached = true;
-        }
-    }
-    else
-    {
-        log->error("already attached");
     }
 }
 
@@ -194,7 +167,7 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
         {
             OUTPUT_DEBUG_STRING_INFO* ds_info = &(event->u.DebugString);
             char* buff = new char[event->u.DebugString.nDebugStringLength * 2];
-            //char* buff = (char*)malloc(event->u.DebugString.nDebugStringLength * 2); // handle WCHAR..
+            
             ReadProcessMemory(
                 proc_info->hProcess,         // HANDLE to Debuggee
                 ds_info->lpDebugStringData,  // Target process' valid pointer
@@ -203,7 +176,7 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
                 NULL);
 
             log->info("debug message [%s]", buff);
-            //free(buff);
+            
             delete[] buff;
             break;
         }
@@ -217,13 +190,43 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
     return true;
 }
 
+void dm_core::start_process(dm_cmd_start_process* cmd)
+{
+    log->debug("core: start_process: path [%s]", cmd->path);
+
+    if(!attached)
+    {
+        ZeroMemory(&proc_info, sizeof(proc_info));
+        ZeroMemory(&startup_info, sizeof(startup_info));
+        startup_info.cb = sizeof(startup_info);
+
+        log->info("creating process [%s]", cmd->path);
+
+        if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, NULL,NULL, &startup_info, &proc_info))
+        {
+            log->error("failed to create process [%s]", cmd->path);
+        }
+        else
+        {
+            this->attached = true;
+        }
+    }
+    else
+    {
+        log->error("already attached");
+    }
+}
+
 bool dm_core::attach_to_process(UINT32 UUID)
 {
+    //log->debug("core: attach to process - UUID [%d]", cmd->uuid);
     return false;
 }
 
 void dm_core::find_u32(dm_cmd_fu32* cmd)
 {
+    log->debug("core: find_u32: val [%d]", cmd->val);
+
     if(attached)
     {
         PVOID addr;
@@ -238,6 +241,8 @@ void dm_core::find_u32(dm_cmd_fu32* cmd)
 
 void dm_core::write_u32(dm_cmd_wu32* cmd)
 {
+    log->debug("core: write_u32: val [%d] addr [0xllx]", cmd->val, cmd->addr);
+
     if(attached)
     {
         PVOID addr = (PVOID)(cmd->addr);
@@ -261,13 +266,14 @@ void dm_core::write_u32(dm_cmd_wu32* cmd)
 
 PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 {
+    log->debug("core: memory scan: val [%d]", wanted);
+
     MEMORY_BASIC_INFORMATION mem_info;
     LPVOID base_addr = NULL;
     UINT32 reg_num = 0;
     UINT32 size_commited = 0;
     PVOID wanted_addr = 0;
 
-    log->info("memory scan: val [%d]", wanted);
     while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
     {
         if(mem_info.State == MEM_COMMIT)

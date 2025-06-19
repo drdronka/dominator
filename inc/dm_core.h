@@ -2,18 +2,8 @@
 
 #include <windows.h>
 
-#include <thread>
-#include <atomic>
-
 #include "dm_log.h"
 #include "dm_cmd.h"
-
-enum class dm_core_err {
-    ok = 0,
-    create_process = 1,
-    coninue_debug_event = 2,
-    process_debug_event = 3,
-};
 
 class dm_core
 {

@@ -15,7 +15,7 @@ dm_cmd_list::~dm_cmd_list()
         cmd = get();
         if(cmd != nullptr)
         {
-            log->debug("cmd dropped [%d]", cmd->type);
+            log->debug("cmd_list: cmd dropped [%d]", cmd->type);
             next();
         }
     } while (cmd != nullptr);
@@ -24,7 +24,7 @@ dm_cmd_list::~dm_cmd_list()
 void dm_cmd_list::add(dm_cmd* cmd)
 {
     cmd_list.push_back(cmd);
-    log->debug("cmd added [%d]", cmd->type);
+    log->debug("cmd_list: cmd added [%d]", cmd->type);
 }
 
 dm_cmd* dm_cmd_list::get()
@@ -33,7 +33,7 @@ dm_cmd* dm_cmd_list::get()
     if(!cmd_list.empty())
     {
         cmd = cmd_list.front();
-        log->debug("cmd get [%d]", cmd->type);
+        log->debug("cmd_list: cmd get [%d]", cmd->type);
     }
     return cmd;
 }
@@ -44,7 +44,7 @@ void dm_cmd_list::next()
     if(!cmd_list.empty())
     {
         cmd = cmd_list.front();
-        log->debug("cmd removed [%d]", cmd->type);
+        log->debug("cmd_list: cmd removed [%d]", cmd->type);
         delete cmd;
         cmd_list.pop_front();
     }
