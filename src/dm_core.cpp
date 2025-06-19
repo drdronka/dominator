@@ -84,58 +84,19 @@ void dm_core::cmd_loop()
             switch(cmd->type)
             {
                 case dm_cmd_type::exit_cmd_loop:                    
-                    {
-                        loop_exit = true;
-                    }
+                    loop_exit = true;
                     break;
 
                 case dm_cmd_type::start_process:
-                    {
-                        if(!attached)
-                        {
-                            start_process((dm_cmd_start_process*)cmd);
-                        }
-                    }
+                    start_process((dm_cmd_start_process*)cmd);
                     break;
 
                 case dm_cmd_type::fu32:
-                    {
-                        if(attached)
-                        {
-                            PVOID addr;
-                            UINT32 val = ((dm_cmd_fu32*)cmd)->val;
-                            addr = scan_memory(&proc_info, val);
-                        }
-                        else
-                        {
-                            log->error("not attached");
-                        }
-                    }
+                    find_u32((dm_cmd_fu32*)cmd);
                     break;
                 
                 case dm_cmd_type::wu32:
-                    {
-                        if(attached)
-                        {
-                            dm_cmd_wu32* cmd_s = (dm_cmd_wu32*)cmd;
-                            PVOID addr = (PVOID)(cmd_s->addr);
-                            UINT32 val = cmd_s->val;
-                            SIZE_T written = 0;
-
-                            if(WriteProcessMemory(proc_info.hProcess, addr, &val, 4, &written))
-                            {
-                                log->info("written [%d] to [0x%llx]", val, addr);
-                            }
-                            else
-                            {
-                                log->error("failed to write [%d] to [0x%llx] - winapi error [%d]", val, addr, GetLastError());
-                            }
-                        }
-                        else
-                        {
-                            log->error("not attached");
-                        }
-                    }
+                    write_u32((dm_cmd_wu32*)cmd);
                     break;
 
                 default:
@@ -161,25 +122,27 @@ void dm_core::cmd_loop()
 
 void dm_core::start_process(dm_cmd_start_process* cmd)
 {
-    ZeroMemory(&proc_info, sizeof(proc_info));
-    ZeroMemory(&startup_info, sizeof(startup_info));
-    startup_info.cb = sizeof(startup_info);
-
-    log->info("creating process [%s]", cmd->path);
-
-    if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, NULL,NULL, &startup_info, &proc_info))
+    if(!attached)
     {
-        log->error("failed to create process [%s]", cmd->path);
+        ZeroMemory(&proc_info, sizeof(proc_info));
+        ZeroMemory(&startup_info, sizeof(startup_info));
+        startup_info.cb = sizeof(startup_info);
+
+        log->info("creating process [%s]", cmd->path);
+
+        if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, NULL,NULL, &startup_info, &proc_info))
+        {
+            log->error("failed to create process [%s]", cmd->path);
+        }
+        else
+        {
+            this->attached = true;
+        }
     }
     else
     {
-        this->attached = true;
+        log->error("already attached");
     }
-}
-
-bool dm_core::attach_to_process(UINT32 UUID)
-{
-    return false;
 }
 
 const char dm_core::debug_event_id_name[][27] = {
@@ -230,7 +193,8 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
         case OUTPUT_DEBUG_STRING_EVENT:            
         {
             OUTPUT_DEBUG_STRING_INFO* ds_info = &(event->u.DebugString);
-            char* buff = (char*)malloc(event->u.DebugString.nDebugStringLength * 2); // handle WCHAR..
+            char* buff = new char[event->u.DebugString.nDebugStringLength * 2];
+            //char* buff = (char*)malloc(event->u.DebugString.nDebugStringLength * 2); // handle WCHAR..
             ReadProcessMemory(
                 proc_info->hProcess,         // HANDLE to Debuggee
                 ds_info->lpDebugStringData,  // Target process' valid pointer
@@ -239,7 +203,8 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
                 NULL);
 
             log->info("debug message [%s]", buff);
-            free(buff);
+            //free(buff);
+            delete[] buff;
             break;
         }
         case RIP_EVENT:
@@ -250,6 +215,48 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
     }
 
     return true;
+}
+
+bool dm_core::attach_to_process(UINT32 UUID)
+{
+    return false;
+}
+
+void dm_core::find_u32(dm_cmd_fu32* cmd)
+{
+    if(attached)
+    {
+        PVOID addr;
+        UINT32 val = cmd->val;
+        scan_memory(&proc_info, val);
+    }
+    else
+    {
+        log->error("not attached");
+    }
+}
+
+void dm_core::write_u32(dm_cmd_wu32* cmd)
+{
+    if(attached)
+    {
+        PVOID addr = (PVOID)(cmd->addr);
+        UINT32 val = cmd->val;
+        SIZE_T written = 0;
+
+        if(WriteProcessMemory(proc_info.hProcess, addr, &val, 4, &written))
+        {
+            log->info("written [%d] to [0x%llx]", val, addr);
+        }
+        else
+        {
+            log->error("failed to write [%d] to [0x%llx] - winapi error [%d]", val, addr, GetLastError());
+        }
+    }
+    else
+    {
+        log->error("not attached");
+    }
 }
 
 PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)

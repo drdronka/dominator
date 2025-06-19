@@ -27,9 +27,11 @@ class dm_core
         void cmd_loop(); // started by dm_core_cmd_loop(), not to be used directly
 
     protected:
+        bool process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
         void start_process(dm_cmd_start_process* cmd);
         bool attach_to_process(UINT32 uuid);
-        bool process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
+        void find_u32(dm_cmd_fu32* cmd);
+        void write_u32(dm_cmd_wu32* cmd);
         PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
 
         dm_log* log;
