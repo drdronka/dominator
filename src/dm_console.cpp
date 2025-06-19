@@ -83,11 +83,13 @@ void dm_console::run()
             }
             
             log->info("commands:");
-            log->info("run <path>  - start process");
-            log->info("ll <level>  - set log level (0 none, 1 error, 2 info, 3 debug)");
-            log->info("lf <format> - set log format (0 clean, 1 with prefix)");
-            log->info("help        - this help page");
-            log->info("exit        - stop/detach and exit");
+            log->info("run <path>        - start process");
+            log->info("fu32 <val>        - find u32 value in target memory");
+            log->info("wu32 <val> <addr> - write u32 value to target memory");
+            log->info("ll <level>        - set log level (0 none, 1 error, 2 info, 3 debug)");
+            log->info("lf <format>       - set log format (0 clean, 1 with prefix)");
+            log->info("help              - this help page");
+            log->info("exit              - stop/detach and exit");
         }
         else if(is_arg(cmd, "exit"))
         {
