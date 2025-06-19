@@ -6,6 +6,7 @@
 int main(int argc, char* argv[])
 {
     dm_log* log = new dm_log();
+    //dm_log* log = new dm_log(dm_log_level::debug, dm_log_format::clean);
     dm_core* core = new dm_core(log);
 
     if(argc > 1)
@@ -16,7 +17,7 @@ int main(int argc, char* argv[])
     dm_console* console = new dm_console(log, core);
     console->run();
 
-    //delete console;
+    delete console;
     delete core;
     delete log;
 

@@ -7,9 +7,10 @@
 enum class dm_cmd_type
 {
     exit_cmd_loop = 0,
-    start_process = 1,
-    attach_to_process = 1,
-    mem_scan = 2,
+    start_process = 10,
+    attach_to_process = 11,
+    fu32 = 20,
+    wu32 = 30
 };
 
 class dm_cmd
@@ -48,4 +49,23 @@ class dm_cmd_start_process : dm_cmd
         ~dm_cmd_start_process();
 
         char* path;
+};
+
+class dm_cmd_fu32 : dm_cmd
+{
+    public:
+        dm_cmd_fu32(UINT32 val);
+        ~dm_cmd_fu32();
+
+        UINT32 val;
+};
+
+class dm_cmd_wu32 : dm_cmd
+{
+    public:
+        dm_cmd_wu32(UINT32 val, UINT64 addr);
+        ~dm_cmd_wu32();
+
+        UINT32 val;
+        UINT64 addr;
 };

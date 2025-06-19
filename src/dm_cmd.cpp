@@ -65,11 +65,29 @@ dm_cmd_start_process::dm_cmd_start_process(char const* const path)
     this->path = new char[len+1];
     strncpy(this->path, path, len);
     this->path[len] = 0;
-
     type = dm_cmd_type::start_process;
 }
 
 dm_cmd_start_process::~dm_cmd_start_process()
 {
     delete[] path;
+}
+
+dm_cmd_fu32::dm_cmd_fu32(UINT32 val)
+{
+    this->val = val;
+    type = dm_cmd_type::fu32;
+}
+dm_cmd_fu32::~dm_cmd_fu32()
+{
+}
+
+dm_cmd_wu32::dm_cmd_wu32(UINT32 val, UINT64 addr)
+{
+    this->val = val;
+    this->addr = addr;
+    type = dm_cmd_type::wu32;
+}
+dm_cmd_wu32::~dm_cmd_wu32()
+{
 }

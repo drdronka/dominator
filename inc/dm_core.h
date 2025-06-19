@@ -27,7 +27,7 @@ class dm_core
         void cmd_loop(); // started by dm_core_cmd_loop(), not to be used directly
 
     protected:
-        bool start_process(dm_cmd_start_process* cmd);
+        void start_process(dm_cmd_start_process* cmd);
         bool attach_to_process(UINT32 uuid);
         bool process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
         PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
@@ -36,6 +36,11 @@ class dm_core
         dm_cmd_list* cmd_list;
         HANDLE cmd_thread;
         DWORD cmd_thread_id;
+
+        bool attached;
+        STARTUPINFOA startup_info; 
+        PROCESS_INFORMATION proc_info; 
+        CREATE_PROCESS_DEBUG_INFO proc_debug_info;
 
         static char const debug_event_id_name[][27];
 };

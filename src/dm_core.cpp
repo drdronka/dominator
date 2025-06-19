@@ -11,6 +11,7 @@ dm_core::dm_core(dm_log* log)
     cmd_list = new dm_cmd_list(log);
     cmd_thread = NULL;
     cmd_thread_id = 0;
+    attached = false;
 }
 
 dm_core::~dm_core()
@@ -58,7 +59,7 @@ void dm_core::stop_cmd_loop()
         cmd_thread = NULL;
         cmd_thread_id = 0;
 
-        log->info("cmd loop stopped");
+        log->debug("cmd loop stopped");
     }
 }
 
@@ -71,22 +72,70 @@ static DWORD WINAPI dm_core_cmd_loop(LPVOID ref)
 
 void dm_core::cmd_loop()
 {
-    log->info("cmd loop started");
+    log->debug("cmd loop started");
 
     bool loop_exit = false;
     while(!loop_exit)
     {
+        // process command
         dm_cmd* cmd = cmd_list->get();
         if(cmd != nullptr)
         {
             switch(cmd->type)
             {
                 case dm_cmd_type::exit_cmd_loop:                    
-                    loop_exit = true;
+                    {
+                        loop_exit = true;
+                    }
                     break;
 
                 case dm_cmd_type::start_process:
-                    start_process((dm_cmd_start_process*)cmd);
+                    {
+                        if(!attached)
+                        {
+                            start_process((dm_cmd_start_process*)cmd);
+                        }
+                    }
+                    break;
+
+                case dm_cmd_type::fu32:
+                    {
+                        if(attached)
+                        {
+                            PVOID addr;
+                            UINT32 val = ((dm_cmd_fu32*)cmd)->val;
+                            addr = scan_memory(&proc_info, val);
+                        }
+                        else
+                        {
+                            log->error("not attached");
+                        }
+                    }
+                    break;
+                
+                case dm_cmd_type::wu32:
+                    {
+                        if(attached)
+                        {
+                            dm_cmd_wu32* cmd_s = (dm_cmd_wu32*)cmd;
+                            PVOID addr = (PVOID)(cmd_s->addr);
+                            UINT32 val = cmd_s->val;
+                            SIZE_T written = 0;
+
+                            if(WriteProcessMemory(proc_info.hProcess, addr, &val, 4, &written))
+                            {
+                                log->info("written [%d] to [0x%llx]", val, addr);
+                            }
+                            else
+                            {
+                                log->error("failed to write [%d] to [0x%llx] - winapi error [%d]", val, addr, GetLastError());
+                            }
+                        }
+                        else
+                        {
+                            log->error("not attached");
+                        }
+                    }
                     break;
 
                 default:
@@ -95,66 +144,36 @@ void dm_core::cmd_loop()
 
             cmd_list->next();
         }
-    }
-}
 
-bool dm_core::start_process(dm_cmd_start_process* cmd)
-{
-    STARTUPINFOA startup_info; 
-    PROCESS_INFORMATION proc_info; 
-    CREATE_PROCESS_DEBUG_INFO proc_debug_info;
-
-    ZeroMemory(&proc_info, sizeof(proc_info));
-    ZeroMemory(&startup_info, sizeof(startup_info));
-    startup_info.cb = sizeof(startup_info);
-
-    log->info("creating process [%s]", cmd->path);
-
-    if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,NULL, &startup_info, &proc_info))
-    {
-        log->error("failed to create process [%s]", cmd->path);
-        return false;
-    }
-    
-    DEBUG_EVENT debug_event = {0};
-    while(1)
-    {
-        if(WaitForDebugEvent(&debug_event, 3000))
+        // handle process events
+        DEBUG_EVENT debug_event = {0};
+        while(WaitForDebugEvent(&debug_event, 10))
         {
             process_debug_event(&debug_event, &proc_info, &proc_debug_info);
 
             if(!ContinueDebugEvent(debug_event.dwProcessId, debug_event.dwThreadId, DBG_CONTINUE))
             {   
                 log->error("continue debug event failed");
-                return false;
             }       
         }
-        else
-        {
+    }
+}
 
-#if 0            
-            log->info("no event");
+void dm_core::start_process(dm_cmd_start_process* cmd)
+{
+    ZeroMemory(&proc_info, sizeof(proc_info));
+    ZeroMemory(&startup_info, sizeof(startup_info));
+    startup_info.cb = sizeof(startup_info);
 
-            static UINT8 scan_done = false;
-            if(!scan_done)
-            {
-                PVOID wanted_addr =  scan_memory(&proc_info, 555555);
+    log->info("creating process [%s]", cmd->path);
 
-                UINT32 new_val = 123456;
-                SIZE_T write_size = 0;
-                if(wanted_addr)
-                {
-                    WriteProcessMemory(proc_info.hProcess, wanted_addr, &new_val, sizeof(new_val), &write_size);
-                    if(write_size == sizeof(new_val))
-                    {
-                        log->info("written [%d] to [0x%x]", new_val, wanted_addr);
-                    }
-                }
-
-                scan_done = true;
-            }
-#endif            
-        }
+    if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, NULL,NULL, &startup_info, &proc_info))
+    {
+        log->error("failed to create process [%s]", cmd->path);
+    }
+    else
+    {
+        this->attached = true;
     }
 }
 
@@ -241,7 +260,7 @@ PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
     UINT32 size_commited = 0;
     PVOID wanted_addr = 0;
 
-    log->info("memory scan: wanted [%d]", wanted);
+    log->info("memory scan: val [%d]", wanted);
     while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
     {
         if(mem_info.State == MEM_COMMIT)
@@ -268,7 +287,7 @@ PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
             {
                 if(reg_mem[n] == wanted)
                 {
-                    log->info("wanted [%d] found at [0x%x]", wanted, (mem_info.BaseAddress + (n * 4)));
+                    log->info("val [%d] found at [0x%llx]", wanted, (mem_info.BaseAddress + (n * 4)));
                     wanted_addr = mem_info.BaseAddress + (n * 4);
                 }
             }
@@ -282,7 +301,6 @@ PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
         base_addr = (LPVOID)((DWORD_PTR)mem_info.BaseAddress + mem_info.RegionSize);
     }
     log->info("memory scanned [%d] KB", size_commited / 1024);
-    log->info("wanted addr [0x%x]", wanted_addr);
 
     return wanted_addr;
 }

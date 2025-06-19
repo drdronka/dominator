@@ -23,15 +23,14 @@ void dm_console::run()
     log->info("dominator cmd line");
 
     core->start_cmd_loop();
-    core->stop_cmd_loop();
-    core->start_cmd_loop();
 
     bool loop_exit = false;
     while(!loop_exit)
     {
         char input[CMD_SIZE];
         char cmd[CMD_SIZE];
-        char arg[CMD_SIZE];
+        char arg1[CMD_SIZE];
+        char arg2[CMD_SIZE];
 
         fgets(input, CMD_SIZE, stdin);
 
@@ -43,23 +42,37 @@ void dm_console::run()
 
         if(is_arg(cmd, "run"))
         {
-            if(get_arg(input, 1, arg))
+            if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg));
+                core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg1));
+            }
+        }
+        else if(is_arg(input, "fu32"))
+        {
+            if(get_arg(input, 1, arg1))
+            {
+                core->add_cmd((dm_cmd*)new dm_cmd_fu32(strtoul(arg1, NULL, 0)));
+            }
+        }
+        else if(is_arg(input, "wu32"))
+        {
+            if(get_arg(input, 1, arg1) && get_arg(input, 2, arg2))
+            {
+                core->add_cmd((dm_cmd*)new dm_cmd_wu32(strtoul(arg1, NULL, 0), strtoull(arg2, NULL, 0)));
             }
         }
         else if(is_arg(input, "ll"))
         {
-            if(get_arg(input, 1, arg))
+            if(get_arg(input, 1, arg1))
             {
-                log->set_level((dm_log_level)strtol(arg, NULL, 0));
+                log->set_level((dm_log_level)strtoul(arg1, NULL, 0));
             }
         }
         else if(is_arg(input, "lf"))
         {
-            if(get_arg(input, 1, arg))
+            if(get_arg(input, 1, arg1))
             {
-                log->set_format((dm_log_format)strtol(arg, NULL, 0));
+                log->set_format((dm_log_format)strtoul(arg1, NULL, 0));
             }
         }   
         else if(is_arg(input, "help"))

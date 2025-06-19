@@ -3,7 +3,7 @@
 
 #include "dm_log.h"
 
-#define DEFAULT_LOG_LEVEL  dm_log_level::debug
+#define DEFAULT_LOG_LEVEL  dm_log_level::info
 #define DEFAULT_LOG_FORMAT dm_log_format::clean
 #define LOG_PREFIX        "D> "
 
