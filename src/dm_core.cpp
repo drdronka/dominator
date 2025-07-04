@@ -92,6 +92,10 @@ void dm_core::cmd_loop()
                 case dm_cmd_type::fu32:
                     find_u32((dm_cmd_fu32*)cmd);
                     break;
+
+                case dm_cmd_type::ru32:
+                    read_u32((dm_cmd_ru32*)cmd);
+                    break;
                 
                 case dm_cmd_type::wu32:
                     write_u32((dm_cmd_wu32*)cmd);
@@ -192,7 +196,7 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
 
 void dm_core::start_process(dm_cmd_start_process* cmd)
 {
-    log->debug("core: start_process: path [%s]", cmd->path);
+    log->info("core: start_process: path [%s]", cmd->path);
 
     if(!attached)
     {
@@ -225,7 +229,7 @@ bool dm_core::attach_to_process(UINT32 UUID)
 
 void dm_core::find_u32(dm_cmd_fu32* cmd)
 {
-    log->debug("core: find_u32: val [%d]", cmd->val);
+    log->info("core: find_u32: val [%d]", cmd->val);
 
     if(attached)
     {
@@ -239,9 +243,32 @@ void dm_core::find_u32(dm_cmd_fu32* cmd)
     }
 }
 
+void dm_core::read_u32(dm_cmd_ru32* cmd)
+{
+    log->info("core: read_u32: addr [0x%llx]", cmd->addr);
+
+    if(attached)
+    {
+        UINT32 reg_mem;
+        SIZE_T read_size = 0;
+        if(ReadProcessMemory(proc_info.hProcess, (LPCVOID)cmd->addr, &reg_mem, 4, &read_size))
+        {
+            log->info("val read [%d]", reg_mem);
+        }
+        else
+        {
+            log->error("read failed - winapi error [%d]", GetLastError());
+        }
+    }
+    else
+    {
+        log->error("not attached");
+    }
+}
+
 void dm_core::write_u32(dm_cmd_wu32* cmd)
 {
-    log->debug("core: write_u32: val [%d] addr [0xllx]", cmd->val, cmd->addr);
+    log->info("core: write_u32: val [%d] addr [0x%llx]", cmd->val, cmd->addr);
 
     if(attached)
     {
@@ -251,11 +278,11 @@ void dm_core::write_u32(dm_cmd_wu32* cmd)
 
         if(WriteProcessMemory(proc_info.hProcess, addr, &val, 4, &written))
         {
-            log->info("written [%d] to [0x%llx]", val, addr);
+            log->info("write complete");
         }
         else
         {
-            log->error("failed to write [%d] to [0x%llx] - winapi error [%d]", val, addr, GetLastError());
+            log->error("write failed - winapi error [%d]", GetLastError());
         }
     }
     else
@@ -266,7 +293,7 @@ void dm_core::write_u32(dm_cmd_wu32* cmd)
 
 PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 {
-    log->debug("core: memory scan: val [%d]", wanted);
+    log->info("core: memory_scan: val [%d]", wanted);
 
     MEMORY_BASIC_INFORMATION mem_info;
     LPVOID base_addr = NULL;

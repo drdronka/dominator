@@ -10,7 +10,8 @@ enum class dm_cmd_type
     start_process = 10,
     attach_to_process = 11,
     fu32 = 20,
-    wu32 = 30
+    ru32 = 30,
+    wu32 = 40,
 };
 
 class dm_cmd
@@ -58,6 +59,15 @@ class dm_cmd_fu32 : dm_cmd
         ~dm_cmd_fu32();
 
         UINT32 val;
+};
+
+class dm_cmd_ru32 : dm_cmd
+{
+    public:
+        dm_cmd_ru32(UINT64 addr);
+        ~dm_cmd_ru32();
+
+        UINT64 addr;
 };
 
 class dm_cmd_wu32 : dm_cmd

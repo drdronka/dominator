@@ -82,6 +82,15 @@ dm_cmd_fu32::~dm_cmd_fu32()
 {
 }
 
+dm_cmd_ru32::dm_cmd_ru32(UINT64 addr)
+{
+    this->addr = addr;
+    type = dm_cmd_type::ru32;
+}
+dm_cmd_ru32::~dm_cmd_ru32()
+{
+}
+
 dm_cmd_wu32::dm_cmd_wu32(UINT32 val, UINT64 addr)
 {
     this->val = val;

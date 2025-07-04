@@ -21,6 +21,7 @@ class dm_core
         void start_process(dm_cmd_start_process* cmd);
         bool attach_to_process(UINT32 uuid);
         void find_u32(dm_cmd_fu32* cmd);
+        void read_u32(dm_cmd_ru32* cmd);
         void write_u32(dm_cmd_wu32* cmd);
         PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
 
