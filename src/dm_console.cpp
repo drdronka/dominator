@@ -89,7 +89,7 @@ void dm_console::run()
             log->info("ll <level>          - set log level (0 none, 1 error, 2 info, 3 debug)");
             log->info("lf <format>         - set log format (0 clean, 1 with prefix)");
             log->info("help                - this help page");
-            log->info("exit                - stop/detach and exit");
+            log->info("exit                - kill/detach and exit");
         }
         else if(is_arg(cmd, "exit"))
         {
