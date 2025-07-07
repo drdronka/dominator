@@ -16,7 +16,7 @@ dm_scan::~dm_scan()
 
 void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 {
-    log->info("core: memory_scan: val [%lu]", wanted);
+    log->info("scan: find_u32: val [%lu]", wanted);
 
     MEMORY_BASIC_INFORMATION mem_info;
     LPVOID base_addr = NULL;
@@ -40,7 +40,7 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
                     {
                         UINT64 wanted_addr = (UINT64)(mem_info.BaseAddress + (n * 4));
                         regs.push_back(wanted_addr);
-                        log->info("val [%d] found at [0x%llx]", wanted, wanted_addr);
+                        log->info("val [%lu] found at [0x%llx]", wanted, wanted_addr);
                     }
                 }
 
@@ -93,7 +93,7 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 
 void dm_scan::replace_u32(PROCESS_INFORMATION* proc_info, UINT32 val)
 {
-    log->info("scan: u32_replace: val [%lu]", val);
+    log->info("scan: replace_u32: val [%lu]", val);
 
     if(regs.size() != 0)
     {
@@ -110,6 +110,6 @@ void dm_scan::replace_u32(PROCESS_INFORMATION* proc_info, UINT32 val)
 
 void dm_scan::reset_u32()
 {
-    log->info("scan: u32_reset");
+    log->info("scan: reset_u32");
     regs.clear();
 }

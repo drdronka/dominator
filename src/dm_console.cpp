@@ -45,25 +45,7 @@ void dm_console::run()
             strip(input + strlen("run "), arg1);
             core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg1));
         }
-        else if(is_arg(cmd, "fu32"))
-        {
-            if(get_arg(input, 1, arg1))
-            {
-                core->add_cmd((dm_cmd*)new dm_cmd_fu32(strtoul(arg1, NULL, 0)));
-            }
-        }
-        else if(is_arg(cmd, "fu32_replace"))
-        {
-            if(get_arg(input, 1, arg1))
-            {
-                core->add_cmd((dm_cmd*)new dm_cmd_fu32_replace(strtoul(arg1, NULL, 0)));
-            }
-        }
-        else if(is_arg(cmd, "fu32_reset"))
-        {
-            core->add_cmd((dm_cmd*)new dm_cmd_fu32_reset());
-        }
-        else if(is_arg(input, "ru32"))
+        else if(is_arg(cmd, "ru32"))
         {
             if(get_arg(input, 1, arg1))
             {
@@ -74,8 +56,26 @@ void dm_console::run()
         {
             if(get_arg(input, 1, arg1) && get_arg(input, 2, arg2))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_wu32(strtoul(arg1, NULL, 0), strtoull(arg2, NULL, 0)));
+                core->add_cmd((dm_cmd*)new dm_cmd_wu32(strtoul(arg2, NULL, 0), strtoull(arg1, NULL, 0)));
             }
+        }
+        else if(is_arg(cmd, "fu32"))
+        {
+            if(get_arg(input, 1, arg1))
+            {
+                core->add_cmd((dm_cmd*)new dm_cmd_fu32(strtoul(arg1, NULL, 0)));
+            }
+        }
+        else if(is_arg(cmd, "fu32w"))
+        {
+            if(get_arg(input, 1, arg1))
+            {
+                core->add_cmd((dm_cmd*)new dm_cmd_fu32_replace(strtoul(arg1, NULL, 0)));
+            }
+        }
+        else if(is_arg(cmd, "fu32r"))
+        {
+            core->add_cmd((dm_cmd*)new dm_cmd_fu32_reset());
         }
         else if(is_arg(cmd, "ll"))
         {
@@ -98,15 +98,20 @@ void dm_console::run()
                 log->set_level(dm_log_level::info);
             }
             
-            log->info("commands:");
+            log->info("--[ CORE ]--------------------------------------------------");
             log->info("run <path>          - start process");
-            log->info("fu32 <val>          - find u32 value in target memory, can be chained");
-            log->info("fu32_replace <val>  - replace all occurances found by fu32");
-            log->info("fu32_reset          - reset fu32 address vector");
+            log->info("--[ REGS ]--------------------------------------------------");
             log->info("ru32 <addr64>       - read u32 value from target memory");
-            log->info("wu32 <val> <addr64> - write u32 value to target memory");
+            log->info("wu32 <addr64> <val> - write u32 value to target memory");
+            log->info("--[ MEM SCAN ]-----------------------------------------------");
+            log->info("fu32 <val>          - find u32 value in target memory");
+            log->info("                      subsequent calls only check previusly found addresses");
+            log->info("fu32w <val>         - write to all addresses found by fu32");
+            log->info("fu32r               - reset fu32 address list");
+            log->info("--[ LOGS ]---------------------------------------------------");
             log->info("ll <level>          - set log level (0 none, 1 error, 2 info, 3 debug)");
             log->info("lf <format>         - set log format (0 clean, 1 with prefix)");
+            log->info("--[ CMDLINE ]-------------------------------------------------");
             log->info("help                - this help page");
             log->info("exit                - kill/detach and exit");
         }

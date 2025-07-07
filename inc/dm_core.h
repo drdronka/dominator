@@ -18,7 +18,7 @@ class dm_core
         void stop_cmd_loop();
         void cmd_loop(); // started by dm_core_cmd_loop(), not to be used directly
         
-        void start_process(dm_cmd_start_process* cmd);
+        void start_process(char const* const path);
         bool attach_to_process(UINT32 uuid);
 
         void read_u32(dm_cmd_ru32* cmd);

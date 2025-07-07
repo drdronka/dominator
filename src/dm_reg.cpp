@@ -11,7 +11,7 @@ dm_reg::~dm_reg()
 
 UINT32 dm_reg::read_u32(PROCESS_INFORMATION* proc_info, UINT64 addr)
 {
-    log->info("core: read_u32: addr [0x%llx]", addr);
+    log->info("reg: read_u32: addr [0x%llx]", addr);
 
     UINT32 reg_mem;
     SIZE_T read_size = 0;
@@ -29,7 +29,7 @@ UINT32 dm_reg::read_u32(PROCESS_INFORMATION* proc_info, UINT64 addr)
 
 void dm_reg::write_u32(PROCESS_INFORMATION* proc_info, UINT64 addr, UINT32 val)
 {
-    log->info("core: write_u32: addr [0x%llx] val [%lu]", addr, val);
+    log->info("reg: write_u32: addr [0x%llx] val [%lu]", addr, val);
 
     SIZE_T written = 0;
     if(WriteProcessMemory(proc_info->hProcess, (LPVOID)addr, &val, 4, &written))

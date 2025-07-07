@@ -102,7 +102,7 @@ void dm_core::cmd_loop()
                         break;
 
                     case dm_cmd_type::start_process:
-                        start_process((dm_cmd_start_process*)cmd);
+                        start_process(((dm_cmd_start_process*)cmd)->path);
                         break;
 
                     case dm_cmd_type::fu32:
@@ -218,9 +218,9 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
     return true;
 }
 
-void dm_core::start_process(dm_cmd_start_process* cmd)
+void dm_core::start_process(char const* const path)
 {
-    log->info("core: start_process: path [%s]", cmd->path);
+    log->info("core: start_process: path [%s]", path);
 
     if(!attached)
     {
@@ -228,11 +228,20 @@ void dm_core::start_process(dm_cmd_start_process* cmd)
         ZeroMemory(&startup_info, sizeof(startup_info));
         startup_info.cb = sizeof(startup_info);
 
-        log->info("creating process [%s]", cmd->path);
+        log->info("creating process [%s]", path);
 
-        if(!CreateProcessA(cmd->path, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, NULL,NULL, &startup_info, &proc_info))
+        if(!CreateProcessA(
+            path, 
+            NULL, 
+            NULL, 
+            NULL, 
+            FALSE, 
+            DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, 
+            NULL,
+            NULL, 
+            &startup_info, &proc_info))
         {
-            log->error("failed to create process [%s]", cmd->path);
+            log->error("failed to create process [%s]", path);
         }
         else
         {
@@ -245,8 +254,9 @@ void dm_core::start_process(dm_cmd_start_process* cmd)
     }
 }
 
-bool dm_core::attach_to_process(UINT32 UUID)
+bool dm_core::attach_to_process(UINT32 uuid)
 {
-    //log->debug("core: attach to process - UUID [%d]", cmd->uuid);
+    log->info("core: attach_to_process: UUID [%d]", uuid);
+
     return false;
 }
