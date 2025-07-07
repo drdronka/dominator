@@ -9,17 +9,18 @@ enum class dm_cmd_type
     exit_cmd_loop = 0,
     start_process = 10,
     attach_to_process = 11,
-    fu32 = 20,
-    fu32_replace = 21,
-    fu32_reset = 22,
-    ru32 = 30,
-    wu32 = 40,
+    ru32 = 20,
+    wu32 = 21,
+    fu32 = 30,
+    fu32_replace = 31,
+    fu32_reset = 32,
 };
 
 class dm_cmd
 {
     public:    
         dm_cmd_type type;
+        bool attached;
 };
 
 class dm_cmd_list

@@ -4,11 +4,17 @@
 #include <algorithm>
 
 #include "dm_core.h"
+#include "dm_scan.h"
+#include "dm_log.h"
+#include "dm_reg.h"
 
 dm_core::dm_core(dm_log* log)
 {
     this->log = log;
     cmd_list = new dm_cmd_list(log);
+    reg = new dm_reg(log);
+    scan = new dm_scan(log, reg);
+
     cmd_thread = NULL;
     cmd_thread_id = 0;
     attached = false;
@@ -17,6 +23,8 @@ dm_core::dm_core(dm_log* log)
 dm_core::~dm_core()
 {
     stop_cmd_loop();
+    delete reg;
+    delete scan;
     delete cmd_list;
 }
 
@@ -81,40 +89,46 @@ void dm_core::cmd_loop()
         dm_cmd* cmd = cmd_list->get();
         if(cmd != nullptr)
         {
-            switch(cmd->type)
+            if(cmd->attached && !attached)
             {
-                case dm_cmd_type::exit_cmd_loop:                    
-                    loop_exit = true;
-                    break;
-
-                case dm_cmd_type::start_process:
-                    start_process((dm_cmd_start_process*)cmd);
-                    break;
-
-                case dm_cmd_type::fu32:
-                    find_u32((dm_cmd_fu32*)cmd);
-                    break;
-
-                case dm_cmd_type::fu32_replace:
-                    find_u32_replace((dm_cmd_fu32*)cmd);
-                    break;
-
-                case dm_cmd_type::fu32_reset:
-                    find_u32_reset();
-                    break;
-                    
-                case dm_cmd_type::ru32:
-                    read_u32((dm_cmd_ru32*)cmd);
-                    break;
-                
-                case dm_cmd_type::wu32:
-                    write_u32((dm_cmd_wu32*)cmd);
-                    break;
-
-                default:
-                    log->error("unknown cmd [%d]", cmd->type);
+                log->error("not attached");
             }
+            else
+            {
+                switch(cmd->type)
+                {
+                    case dm_cmd_type::exit_cmd_loop:                    
+                        loop_exit = true;
+                        break;
 
+                    case dm_cmd_type::start_process:
+                        start_process((dm_cmd_start_process*)cmd);
+                        break;
+
+                    case dm_cmd_type::fu32:
+                        scan->find_u32(&proc_info, ((dm_cmd_fu32*)cmd)->val);
+                        break;
+
+                    case dm_cmd_type::fu32_replace:
+                        scan->replace_u32(&proc_info, ((dm_cmd_fu32*)cmd)->val);
+                        break;
+
+                    case dm_cmd_type::fu32_reset:
+                        scan->reset_u32();
+                        break;
+                        
+                    case dm_cmd_type::ru32:
+                        reg->read_u32(&proc_info, ((dm_cmd_ru32*)cmd)->addr);
+                        break;
+                    
+                    case dm_cmd_type::wu32:
+                        reg->write_u32(&proc_info, ((dm_cmd_wu32*)cmd)->addr, ((dm_cmd_wu32*)cmd)->val);
+                        break;
+
+                    default:
+                        log->error("unknown cmd [%d]", cmd->type);
+                }
+            }
             cmd_list->next();
         }
 
@@ -235,170 +249,4 @@ bool dm_core::attach_to_process(UINT32 UUID)
 {
     //log->debug("core: attach to process - UUID [%d]", cmd->uuid);
     return false;
-}
-
-void dm_core::find_u32(dm_cmd_fu32* cmd)
-{
-    log->info("core: find_u32: val [%d]", cmd->val);
-
-    if(attached)
-    {
-        PVOID addr;
-        UINT32 val = cmd->val;
-        scan_memory(&proc_info, val);
-    }
-    else
-    {
-        log->error("not attached");
-    }
-}
-
-void dm_core::read_u32(dm_cmd_ru32* cmd)
-{
-    log->info("core: read_u32: addr [0x%llx]", cmd->addr);
-
-    if(attached)
-    {
-        UINT32 reg_mem;
-        SIZE_T read_size = 0;
-        if(ReadProcessMemory(proc_info.hProcess, (LPCVOID)cmd->addr, &reg_mem, 4, &read_size))
-        {
-            log->info("val read [%d]", reg_mem);
-        }
-        else
-        {
-            log->error("read failed - winapi error [%d]", GetLastError());
-        }
-    }
-    else
-    {
-        log->error("not attached");
-    }
-}
-
-void dm_core::write_u32(dm_cmd_wu32* cmd)
-{
-    log->info("core: write_u32: val [%d] addr [0x%llx]", cmd->val, cmd->addr);
-
-    if(attached)
-    {
-        PVOID addr = (PVOID)(cmd->addr);
-        UINT32 val = cmd->val;
-        SIZE_T written = 0;
-
-        if(WriteProcessMemory(proc_info.hProcess, addr, &val, 4, &written))
-        {
-            log->info("write complete");
-        }
-        else
-        {
-            log->error("write failed - winapi error [%d]", GetLastError());
-        }
-    }
-    else
-    {
-        log->error("not attached");
-    }
-}
-
-void dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
-{
-    log->info("core: memory_scan: val [%d]", wanted);
-
-    MEMORY_BASIC_INFORMATION mem_info;
-    LPVOID base_addr = NULL;
-    UINT32 reg_num = 0;
-    UINT32 size_commited = 0;
-
-    if(fu32_regs.size() == 0)
-    {
-        while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
-        {
-            if(mem_info.State == MEM_COMMIT)
-            {
-                UINT32* reg_mem = (UINT32*)malloc(mem_info.RegionSize);
-                SIZE_T read_size = 0;
-                ReadProcessMemory(proc_info->hProcess, mem_info.BaseAddress, reg_mem, mem_info.RegionSize, &read_size);
-                //printf("region read: size [%x]\n", read_size);
-
-                for(UINT32 n = 0; n < read_size / 4; n++)
-                {
-                    if(reg_mem[n] == wanted)
-                    {
-                        UINT64 wanted_addr = (UINT64)(mem_info.BaseAddress + (n * 4));
-                        fu32_regs.push_back(wanted_addr);
-                        log->info("val [%d] found at [0x%llx]", wanted, wanted_addr);
-                    }
-                }
-
-                free(reg_mem);
-
-                size_commited += mem_info.RegionSize;
-                reg_num++;
-            }
-            
-            base_addr = (LPVOID)((DWORD_PTR)mem_info.BaseAddress + mem_info.RegionSize);
-        }
-        log->info("memory scanned [%d] KB", size_commited / 1024);
-    }
-    else
-    {
-        for(size_t n = 0; n < fu32_regs.size();) 
-        {
-            UINT32 reg;
-            UINT64 reg_addr = fu32_regs[n];
-            SIZE_T read_size = 0;
-
-            if(!ReadProcessMemory(proc_info->hProcess, (PVOID*)reg_addr, &reg, 4, &read_size))
-            {
-                log->error("ReadProcessMemory failed - winapi error [%d]", GetLastError());
-                return;
-            }
-
-            if(reg != wanted)
-            {
-                fu32_regs.erase(fu32_regs.begin() + n);
-                log->info("addr [%llx] removed", reg_addr);
-            }
-            else
-            {
-                n++;
-            }
-        }
-
-        for(size_t n = 0; n < fu32_regs.size(); n++)
-        {
-            log->info("addr [%llx] persisted", fu32_regs[n]);
-        }
-
-        if(fu32_regs.size() == 0)
-        {
-            log->info("addr vector empty");
-        }
-    }
-}
-
-void dm_core::find_u32_replace(dm_cmd_fu32* cmd)
-{
-    log->debug("core: find_u32_replace: val [%d]", cmd->val);
-
-    if(fu32_regs.size() != 0)
-    {
-        for(size_t n = 0; n < fu32_regs.size(); n++)
-        {
-            dm_cmd_wu32* write_cmd = new dm_cmd_wu32(cmd->val, fu32_regs[n]);
-            write_u32(write_cmd);
-            delete write_cmd;
-        }
-    }
-    else
-    {
-        log->error("addr vector empty");
-    }
-}
-
-void dm_core::find_u32_reset()
-{
-    log->info("core: find_u32_reset");
-    fu32_regs.clear();
 }

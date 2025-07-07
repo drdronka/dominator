@@ -100,7 +100,9 @@ void dm_console::run()
             
             log->info("commands:");
             log->info("run <path>          - start process");
-            log->info("fu32 <val>          - find u32 value in target memory");
+            log->info("fu32 <val>          - find u32 value in target memory, can be chained");
+            log->info("fu32_replace <val>  - replace all occurances found by fu32");
+            log->info("fu32_reset          - reset fu32 address vector");
             log->info("ru32 <addr64>       - read u32 value from target memory");
             log->info("wu32 <val> <addr64> - write u32 value to target memory");
             log->info("ll <level>          - set log level (0 none, 1 error, 2 info, 3 debug)");
