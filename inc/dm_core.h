@@ -24,6 +24,7 @@ class dm_core
         void find_u32(dm_cmd_fu32* cmd);
         void find_u32_replace(dm_cmd_fu32* cmd);
         void find_u32_reset();
+        void read_u32(dm_cmd_ru32* cmd);
         void write_u32(dm_cmd_wu32* cmd);
         void scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
 

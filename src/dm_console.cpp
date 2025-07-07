@@ -63,6 +63,13 @@ void dm_console::run()
         {
             core->add_cmd((dm_cmd*)new dm_cmd_fu32_reset());
         }
+        else if(is_arg(input, "ru32"))
+        {
+            if(get_arg(input, 1, arg1))
+            {
+                core->add_cmd((dm_cmd*)new dm_cmd_ru32(strtoull(arg1, NULL, 0)));
+            }
+        }
         else if(is_arg(cmd, "wu32"))
         {
             if(get_arg(input, 1, arg1) && get_arg(input, 2, arg2))
@@ -94,6 +101,7 @@ void dm_console::run()
             log->info("commands:");
             log->info("run <path>          - start process");
             log->info("fu32 <val>          - find u32 value in target memory");
+            log->info("ru32 <addr64>       - read u32 value from target memory");
             log->info("wu32 <val> <addr64> - write u32 value to target memory");
             log->info("ll <level>          - set log level (0 none, 1 error, 2 info, 3 debug)");
             log->info("lf <format>         - set log format (0 clean, 1 with prefix)");

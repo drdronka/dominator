@@ -81,7 +81,6 @@ dm_cmd_fu32::dm_cmd_fu32(UINT32 val)
 dm_cmd_fu32::~dm_cmd_fu32()
 {
 }
-
 dm_cmd_fu32_replace::dm_cmd_fu32_replace(UINT32 val)
 {
     this->val = val;
@@ -97,6 +96,15 @@ dm_cmd_fu32_reset::dm_cmd_fu32_reset()
 }
 
 dm_cmd_fu32_reset::~dm_cmd_fu32_reset()
+{
+}
+
+dm_cmd_ru32::dm_cmd_ru32(UINT64 addr)
+{
+    this->addr = addr;
+    type = dm_cmd_type::ru32;
+}
+dm_cmd_ru32::~dm_cmd_ru32()
 {
 }
 
