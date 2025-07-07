@@ -42,40 +42,49 @@ void dm_console::run()
 
         if(is_arg(cmd, "run"))
         {
-            if(get_arg(input, 1, arg1))
-            {
-                core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg1));
-            }
+            strip(input + strlen("run "), arg1);
+            core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg1));
         }
-        else if(is_arg(input, "fu32"))
+        else if(is_arg(cmd, "fu32"))
         {
             if(get_arg(input, 1, arg1))
             {
                 core->add_cmd((dm_cmd*)new dm_cmd_fu32(strtoul(arg1, NULL, 0)));
             }
         }
-        else if(is_arg(input, "wu32"))
+        else if(is_arg(cmd, "fu32_replace"))
+        {
+            if(get_arg(input, 1, arg1))
+            {
+                core->add_cmd((dm_cmd*)new dm_cmd_fu32_replace(strtoul(arg1, NULL, 0)));
+            }
+        }
+        else if(is_arg(cmd, "fu32_reset"))
+        {
+            core->add_cmd((dm_cmd*)new dm_cmd_fu32_reset());
+        }
+        else if(is_arg(cmd, "wu32"))
         {
             if(get_arg(input, 1, arg1) && get_arg(input, 2, arg2))
             {
                 core->add_cmd((dm_cmd*)new dm_cmd_wu32(strtoul(arg1, NULL, 0), strtoull(arg2, NULL, 0)));
             }
         }
-        else if(is_arg(input, "ll"))
+        else if(is_arg(cmd, "ll"))
         {
             if(get_arg(input, 1, arg1))
             {
                 log->set_level((dm_log_level)strtoul(arg1, NULL, 0));
             }
         }
-        else if(is_arg(input, "lf"))
+        else if(is_arg(cmd, "lf"))
         {
             if(get_arg(input, 1, arg1))
             {
                 log->set_format((dm_log_format)strtoul(arg1, NULL, 0));
             }
         }   
-        else if(is_arg(input, "help"))
+        else if(is_arg(cmd, "help"))
         {
             if(log->get_level() < dm_log_level::info)
             {
@@ -148,10 +157,24 @@ bool dm_console::get_arg(char const* const cmd, UINT32 arg_n, char* arg)
 
 bool dm_console::is_arg(char const* const cmd, char const* const arg)
 {
-    if(!strncmp(cmd, arg, strlen(arg)))
+    if(strlen(cmd) == strlen(arg) && !strncmp(cmd, arg, strlen(arg)))
     {
         return true;
     }
 
     return false;
+}
+
+void dm_console::strip(char const* const in, char* out)
+{
+    UINT32 i = 0;
+    for(UINT32 n = 0; n < strlen(in); n++)
+    {
+        if(in[n] != '\"' && in[n] != '\n')
+        {
+            out[i] = in[n];
+            i++;
+        }
+    }
+    out[i] = 0;
 }

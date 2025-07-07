@@ -10,6 +10,8 @@ enum class dm_cmd_type
     start_process = 10,
     attach_to_process = 11,
     fu32 = 20,
+    fu32_replace = 21,
+    fu32_reset = 22,
     wu32 = 30
 };
 
@@ -58,6 +60,22 @@ class dm_cmd_fu32 : dm_cmd
         ~dm_cmd_fu32();
 
         UINT32 val;
+};
+
+class dm_cmd_fu32_replace : dm_cmd
+{
+    public:
+        dm_cmd_fu32_replace(UINT32 val);
+        ~dm_cmd_fu32_replace();
+
+        UINT32 val;
+};
+
+class dm_cmd_fu32_reset : dm_cmd
+{
+    public:
+        dm_cmd_fu32_reset();
+        ~dm_cmd_fu32_reset();
 };
 
 class dm_cmd_wu32 : dm_cmd

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <windows.h>
+#include <vector>
 
 #include "dm_log.h"
 #include "dm_cmd.h"
@@ -21,8 +22,10 @@ class dm_core
         void start_process(dm_cmd_start_process* cmd);
         bool attach_to_process(UINT32 uuid);
         void find_u32(dm_cmd_fu32* cmd);
+        void find_u32_replace(dm_cmd_fu32* cmd);
+        void find_u32_reset();
         void write_u32(dm_cmd_wu32* cmd);
-        PVOID scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
+        void scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted);
 
         dm_log* log;
         dm_cmd_list* cmd_list;
@@ -33,6 +36,8 @@ class dm_core
         STARTUPINFOA startup_info; 
         PROCESS_INFORMATION proc_info; 
         CREATE_PROCESS_DEBUG_INFO proc_debug_info;
+
+        std::vector<UINT64> fu32_regs;
 
         static char const debug_event_id_name[][27];
 };

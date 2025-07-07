@@ -82,6 +82,24 @@ dm_cmd_fu32::~dm_cmd_fu32()
 {
 }
 
+dm_cmd_fu32_replace::dm_cmd_fu32_replace(UINT32 val)
+{
+    this->val = val;
+    type = dm_cmd_type::fu32_replace;
+}
+dm_cmd_fu32_replace::~dm_cmd_fu32_replace()
+{
+}
+
+dm_cmd_fu32_reset::dm_cmd_fu32_reset()
+{
+    type = dm_cmd_type::fu32_reset;
+}
+
+dm_cmd_fu32_reset::~dm_cmd_fu32_reset()
+{
+}
+
 dm_cmd_wu32::dm_cmd_wu32(UINT32 val, UINT64 addr)
 {
     this->val = val;

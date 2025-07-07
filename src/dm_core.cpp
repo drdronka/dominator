@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
+#include <vector>
+#include <algorithm>
 
 #include "dm_core.h"
 
@@ -91,6 +93,14 @@ void dm_core::cmd_loop()
 
                 case dm_cmd_type::fu32:
                     find_u32((dm_cmd_fu32*)cmd);
+                    break;
+
+                case dm_cmd_type::fu32_replace:
+                    find_u32_replace((dm_cmd_fu32*)cmd);
+                    break;
+
+                case dm_cmd_type::fu32_reset:
+                    find_u32_reset();
                     break;
                 
                 case dm_cmd_type::wu32:
@@ -264,56 +274,104 @@ void dm_core::write_u32(dm_cmd_wu32* cmd)
     }
 }
 
-PVOID dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
+void dm_core::scan_memory(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 {
-    log->debug("core: memory scan: val [%d]", wanted);
+    log->info("core: memory_scan: val [%d]", wanted);
 
     MEMORY_BASIC_INFORMATION mem_info;
     LPVOID base_addr = NULL;
     UINT32 reg_num = 0;
     UINT32 size_commited = 0;
-    PVOID wanted_addr = 0;
 
-    while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
+    if(fu32_regs.size() == 0)
     {
-        if(mem_info.State == MEM_COMMIT)
+        while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
         {
-            #if 0
-            printf("D> reg_num [0x%x] base_addr [0x%x] alloc_base [0x%x] alloc_prot [0x%x] part_id [0x%x] reg_size [0x%x] state [0x%x] prot [0x%x] type [0x%x]\n",
-                reg_num, 
-                mem_info.BaseAddress,
-                mem_info.AllocationBase,
-                mem_info.AllocationProtect,
-                mem_info.PartitionId,
-                mem_info.RegionSize,
-                mem_info.State,
-                mem_info.Protect,
-                mem_info.Type);
-            #endif
-
-            UINT32* reg_mem = (UINT32*)malloc(mem_info.RegionSize);
-            SIZE_T read_size = 0;
-            ReadProcessMemory(proc_info->hProcess, mem_info.BaseAddress, reg_mem, mem_info.RegionSize, &read_size);
-            //printf("region read: size [%x]\n", read_size);
-
-            for(UINT32 n = 0; n < read_size / 4; n++)
+            if(mem_info.State == MEM_COMMIT)
             {
-                if(reg_mem[n] == wanted)
+                UINT32* reg_mem = (UINT32*)malloc(mem_info.RegionSize);
+                SIZE_T read_size = 0;
+                ReadProcessMemory(proc_info->hProcess, mem_info.BaseAddress, reg_mem, mem_info.RegionSize, &read_size);
+                //printf("region read: size [%x]\n", read_size);
+
+                for(UINT32 n = 0; n < read_size / 4; n++)
                 {
-                    log->info("val [%d] found at [0x%llx]", wanted, (mem_info.BaseAddress + (n * 4)));
-                    wanted_addr = mem_info.BaseAddress + (n * 4);
+                    if(reg_mem[n] == wanted)
+                    {
+                        UINT64 wanted_addr = (UINT64)(mem_info.BaseAddress + (n * 4));
+                        fu32_regs.push_back(wanted_addr);
+                        log->info("val [%d] found at [0x%llx]", wanted, wanted_addr);
+                    }
                 }
+
+                free(reg_mem);
+
+                size_commited += mem_info.RegionSize;
+                reg_num++;
+            }
+            
+            base_addr = (LPVOID)((DWORD_PTR)mem_info.BaseAddress + mem_info.RegionSize);
+        }
+        log->info("memory scanned [%d] KB", size_commited / 1024);
+    }
+    else
+    {
+        for(size_t n = 0; n < fu32_regs.size();) 
+        {
+            UINT32 reg;
+            UINT64 reg_addr = fu32_regs[n];
+            SIZE_T read_size = 0;
+
+            if(!ReadProcessMemory(proc_info->hProcess, (PVOID*)reg_addr, &reg, 4, &read_size))
+            {
+                log->error("ReadProcessMemory failed - winapi error [%d]", GetLastError());
+                return;
             }
 
-            free(reg_mem);
-
-            size_commited += mem_info.RegionSize;
-            reg_num++;
+            if(reg != wanted)
+            {
+                fu32_regs.erase(fu32_regs.begin() + n);
+                log->info("addr [%llx] removed", reg_addr);
+            }
+            else
+            {
+                n++;
+            }
         }
-        
-        base_addr = (LPVOID)((DWORD_PTR)mem_info.BaseAddress + mem_info.RegionSize);
-    }
-    log->info("memory scanned [%d] KB", size_commited / 1024);
 
-    return wanted_addr;
+        for(size_t n = 0; n < fu32_regs.size(); n++)
+        {
+            log->info("addr [%llx] persisted", fu32_regs[n]);
+        }
+
+        if(fu32_regs.size() == 0)
+        {
+            log->info("addr vector empty");
+        }
+    }
+}
+
+void dm_core::find_u32_replace(dm_cmd_fu32* cmd)
+{
+    log->debug("core: find_u32_replace: val [%d]", cmd->val);
+
+    if(fu32_regs.size() != 0)
+    {
+        for(size_t n = 0; n < fu32_regs.size(); n++)
+        {
+            dm_cmd_wu32* write_cmd = new dm_cmd_wu32(cmd->val, fu32_regs[n]);
+            write_u32(write_cmd);
+            delete write_cmd;
+        }
+    }
+    else
+    {
+        log->error("addr vector empty");
+    }
+}
+
+void dm_core::find_u32_reset()
+{
+    log->info("core: find_u32_reset");
+    fu32_regs.clear();
 }

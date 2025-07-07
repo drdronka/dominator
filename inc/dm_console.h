@@ -14,6 +14,7 @@ class dm_console
     protected:
         bool get_arg(char const* const cmd, UINT32 arg_n, char* arg);    
         bool is_arg(char const* const cmd, char const* const arg);
+        void strip(char const* const in, char* out);
         
         dm_core* core;
         dm_log* log;
