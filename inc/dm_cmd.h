@@ -1,19 +1,23 @@
 #pragma once
 
 #include <list>
+#include <atomic>
 
 #include "dm_log.h"
 
 enum class dm_cmd_type
 {
     exit_cmd_loop = 0,
-    start_process = 10,
-    attach_to_process = 11,
-    ru32 = 20,
-    wu32 = 21,
-    fu32 = 30,
-    fu32_replace = 31,
-    fu32_reset = 32,
+    proc_show = 100,
+    proc_run = 101,
+    proc_attach = 102,
+    proc_start = 103,
+    proc_stop = 104,
+    reg_read_u32 = 200,
+    reg_write_u32 = 201,
+    scan_find_u32 = 300,
+    scan_replace_u32 = 301,
+    scan_reset_u32= 302,
 };
 
 class dm_cmd
@@ -37,6 +41,7 @@ class dm_cmd_list
 
     protected:
         dm_log* log;
+        std::atomic<bool> sem;
 };
 
 class dm_cmd_exit_cmd_loop : dm_cmd
@@ -46,55 +51,80 @@ class dm_cmd_exit_cmd_loop : dm_cmd
         ~dm_cmd_exit_cmd_loop();
 };
 
-class dm_cmd_start_process : dm_cmd
+class dm_cmd_proc_show : dm_cmd
 {
     public:
-        dm_cmd_start_process(char const* const path);
-        ~dm_cmd_start_process();
+        dm_cmd_proc_show();
+        ~dm_cmd_proc_show();
+};
+
+class dm_cmd_proc_run : dm_cmd
+{
+    public:
+        dm_cmd_proc_run(char const* const path);
+        ~dm_cmd_proc_run();
 
         char* path;
 };
 
-class dm_cmd_fu32 : dm_cmd
+
+class dm_cmd_proc_start : dm_cmd
 {
     public:
-        dm_cmd_fu32(UINT32 val);
-        ~dm_cmd_fu32();
-
-        UINT32 val;
+        dm_cmd_proc_start();
+        ~dm_cmd_proc_start();
 };
 
-class dm_cmd_fu32_replace : dm_cmd
+class dm_cmd_proc_stop : dm_cmd
 {
     public:
-        dm_cmd_fu32_replace(UINT32 val);
-        ~dm_cmd_fu32_replace();
-
-        UINT32 val;
+        dm_cmd_proc_stop();
+        ~dm_cmd_proc_stop();
 };
 
-class dm_cmd_fu32_reset : dm_cmd
+class dm_cmd_reg_read_u32 : dm_cmd
 {
     public:
-        dm_cmd_fu32_reset();
-        ~dm_cmd_fu32_reset();
-};
-
-class dm_cmd_ru32 : dm_cmd
-{
-    public:
-        dm_cmd_ru32(UINT64 addr);
-        ~dm_cmd_ru32();
+        dm_cmd_reg_read_u32(UINT64 addr);
+        ~dm_cmd_reg_read_u32();
 
         UINT64 addr;
 };
 
-class dm_cmd_wu32 : dm_cmd
+class dm_cmd_reg_write_u32 : dm_cmd
 {
     public:
-        dm_cmd_wu32(UINT32 val, UINT64 addr);
-        ~dm_cmd_wu32();
+        dm_cmd_reg_write_u32(UINT32 val, UINT64 addr);
+        ~dm_cmd_reg_write_u32();
 
         UINT32 val;
         UINT64 addr;
 };
+
+class dm_cmd_scan_find_u32 : dm_cmd
+{
+    public:
+        dm_cmd_scan_find_u32(UINT32 val);
+        ~dm_cmd_scan_find_u32();
+
+        UINT32 val;
+};
+
+class dm_cmd_scan_replace_u32 : dm_cmd
+{
+    public:
+        dm_cmd_scan_replace_u32(UINT32 val);
+        ~dm_cmd_scan_replace_u32();
+
+        UINT32 val;
+};
+
+class dm_cmd_scan_reset_u32 : dm_cmd
+{
+    public:
+        dm_cmd_scan_reset_u32();
+        ~dm_cmd_scan_reset_u32();
+};
+
+
+

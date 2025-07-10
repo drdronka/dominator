@@ -43,39 +43,47 @@ void dm_console::run()
         if(is_arg(cmd, "run"))
         {
             strip(input + strlen("run "), arg1);
-            core->add_cmd((dm_cmd*)new dm_cmd_start_process(arg1));
+            core->add_cmd((dm_cmd*)new dm_cmd_proc_run(arg1));
+        }
+        else if(is_arg(cmd, "stop"))
+        {
+            core->add_cmd((dm_cmd*)new dm_cmd_proc_stop());
+        }
+        else if(is_arg(cmd, "start"))
+        {
+            core->add_cmd((dm_cmd*)new dm_cmd_proc_start());
         }
         else if(is_arg(cmd, "ru32"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_ru32(strtoull(arg1, NULL, 0)));
+                core->add_cmd((dm_cmd*)new dm_cmd_reg_read_u32(strtoull(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "wu32"))
         {
             if(get_arg(input, 1, arg1) && get_arg(input, 2, arg2))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_wu32(strtoul(arg2, NULL, 0), strtoull(arg1, NULL, 0)));
+                core->add_cmd((dm_cmd*)new dm_cmd_reg_write_u32(strtoul(arg2, NULL, 0), strtoull(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "fu32"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_fu32(strtoul(arg1, NULL, 0)));
+                core->add_cmd((dm_cmd*)new dm_cmd_scan_find_u32(strtoul(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "fu32w"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_fu32_replace(strtoul(arg1, NULL, 0)));
+                core->add_cmd((dm_cmd*)new dm_cmd_scan_replace_u32(strtoul(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "fu32r"))
         {
-            core->add_cmd((dm_cmd*)new dm_cmd_fu32_reset());
+            core->add_cmd((dm_cmd*)new dm_cmd_scan_reset_u32());
         }
         else if(is_arg(cmd, "ll"))
         {
@@ -99,7 +107,9 @@ void dm_console::run()
             }
             
             log->info("--[ CORE ]--------------------------------------------------");
-            log->info("run <path>          - start process");
+            log->info("run <path>          - start new process");
+            log->info("stop                - pause process");
+            log->info("start               - resume process");
             log->info("--[ REGS ]--------------------------------------------------");
             log->info("ru32 <addr64>       - read u32 value from target memory");
             log->info("wu32 <addr64> <val> - write u32 value to target memory");

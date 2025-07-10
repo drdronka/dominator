@@ -20,9 +20,8 @@ class dm_core
         
         void start_process(char const* const path);
         bool attach_to_process(UINT32 uuid);
-
-        void read_u32(dm_cmd_ru32* cmd);
-        void write_u32(dm_cmd_wu32* cmd);
+        void pause_process();
+        void resume_process();
 
     protected:
         bool process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);

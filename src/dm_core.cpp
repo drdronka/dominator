@@ -101,28 +101,36 @@ void dm_core::cmd_loop()
                         loop_exit = true;
                         break;
 
-                    case dm_cmd_type::start_process:
-                        start_process(((dm_cmd_start_process*)cmd)->path);
+                    case dm_cmd_type::proc_run:
+                        start_process(((dm_cmd_proc_run*)cmd)->path);
                         break;
 
-                    case dm_cmd_type::fu32:
-                        scan->find_u32(&proc_info, ((dm_cmd_fu32*)cmd)->val);
+                    case dm_cmd_type::proc_stop:
+                        pause_process();
                         break;
 
-                    case dm_cmd_type::fu32_replace:
-                        scan->replace_u32(&proc_info, ((dm_cmd_fu32*)cmd)->val);
+                    case dm_cmd_type::proc_start:
+                        resume_process();
                         break;
 
-                    case dm_cmd_type::fu32_reset:
-                        scan->reset_u32();
-                        break;
-                        
-                    case dm_cmd_type::ru32:
-                        reg->read_u32(&proc_info, ((dm_cmd_ru32*)cmd)->addr);
+                    case dm_cmd_type::reg_read_u32:
+                        reg->read_u32(&proc_info, ((dm_cmd_reg_read_u32*)cmd)->addr);
                         break;
                     
-                    case dm_cmd_type::wu32:
-                        reg->write_u32(&proc_info, ((dm_cmd_wu32*)cmd)->addr, ((dm_cmd_wu32*)cmd)->val);
+                    case dm_cmd_type::reg_write_u32:
+                        reg->write_u32(&proc_info, ((dm_cmd_reg_write_u32*)cmd)->addr, ((dm_cmd_reg_write_u32*)cmd)->val);
+                        break;
+
+                    case dm_cmd_type::scan_find_u32:
+                        scan->find_u32(&proc_info, ((dm_cmd_scan_find_u32*)cmd)->val);
+                        break;
+
+                    case dm_cmd_type::scan_replace_u32:
+                        scan->replace_u32(&proc_info, ((dm_cmd_scan_replace_u32*)cmd)->val);
+                        break;
+
+                    case dm_cmd_type::scan_reset_u32:
+                        scan->reset_u32();
                         break;
 
                     default:
@@ -256,7 +264,21 @@ void dm_core::start_process(char const* const path)
 
 bool dm_core::attach_to_process(UINT32 uuid)
 {
-    log->info("core: attach_to_process: UUID [%d]", uuid);
+    log->info("core: attach_to_process: UUID [%lu]", uuid);
 
     return false;
+}
+
+void dm_core::pause_process()
+{
+    log->info("core: pause_process");
+
+    DebugBreakProcess(proc_info.hProcess);
+}
+
+void dm_core::resume_process()
+{
+    log->info("core: resume_process");
+
+    
 }

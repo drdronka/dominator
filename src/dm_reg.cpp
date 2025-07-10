@@ -21,7 +21,7 @@ UINT32 dm_reg::read_u32(PROCESS_INFORMATION* proc_info, UINT64 addr)
     }
     else
     {
-        log->error("read failed - winapi error [%d]", GetLastError());
+        log->error("read failed: winapi error [%d]", GetLastError());
     }
 
     return reg_mem;
@@ -38,6 +38,6 @@ void dm_reg::write_u32(PROCESS_INFORMATION* proc_info, UINT64 addr, UINT32 val)
     }
     else
     {
-        log->error("write failed - winapi error [%d]", GetLastError());
+        log->error("write failed: winapi error [%d]", GetLastError());
     }
 }

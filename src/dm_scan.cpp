@@ -64,7 +64,7 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 
             if(!ReadProcessMemory(proc_info->hProcess, (PVOID*)reg_addr, &reg, 4, &read_size))
             {
-                log->error("ReadProcessMemory failed - winapi error [%d]", GetLastError());
+                log->error("ReadProcessMemory failed: winapi error [%d]", GetLastError());
                 return;
             }
 
@@ -86,7 +86,7 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 
         if(regs.size() == 0)
         {
-            log->info("addr vector empty");
+            log->info("addr list empty");
         }
     }
 }
@@ -104,7 +104,7 @@ void dm_scan::replace_u32(PROCESS_INFORMATION* proc_info, UINT32 val)
     }
     else
     {
-        log->error("addr vector empty");
+        log->error("addr list empty");
     }
 }
 
