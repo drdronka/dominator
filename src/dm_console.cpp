@@ -45,6 +45,10 @@ void dm_console::run()
             strip(input + strlen("run "), arg1);
             core->add_cmd((dm_cmd*)new dm_cmd_proc_run(arg1));
         }
+        else if(is_arg(cmd, "show"))
+        {
+            core->add_cmd((dm_cmd*)new dm_cmd_proc_show());
+        }
         else if(is_arg(cmd, "stop"))
         {
             core->add_cmd((dm_cmd*)new dm_cmd_proc_stop());

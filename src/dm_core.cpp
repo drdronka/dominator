@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <psapi.h>
 #include <vector>
 #include <algorithm>
 
@@ -7,6 +8,8 @@
 #include "dm_scan.h"
 #include "dm_log.h"
 #include "dm_reg.h"
+
+#define PROC_LIST_SIZE 1024
 
 dm_core::dm_core(dm_log* log)
 {
@@ -101,8 +104,12 @@ void dm_core::cmd_loop()
                         loop_exit = true;
                         break;
 
+                    case dm_cmd_type::proc_show:
+                        show_process_list();
+                        break;
+
                     case dm_cmd_type::proc_run:
-                        start_process(((dm_cmd_proc_run*)cmd)->path);
+                        run_process(((dm_cmd_proc_run*)cmd)->path);
                         break;
 
                     case dm_cmd_type::proc_stop:
@@ -226,7 +233,44 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
     return true;
 }
 
-void dm_core::start_process(char const* const path)
+void dm_core::show_process_list()
+{
+    log->info("core: show_process_list");
+
+    DWORD proc_list[PROC_LIST_SIZE];
+    DWORD proc_list_size = 0;
+
+    if(!EnumProcesses(proc_list, PROC_LIST_SIZE, &proc_list_size))
+    {
+        log->error("failed to get proc list: winapi error [%d]", GetLastError());
+        return;
+    }
+
+    log->info("PID\tname");
+
+    for(UINT32 n = 0 ; n < proc_list_size; n++)
+    {
+        DWORD proc_id = proc_list[n];
+        TCHAR proc_name[MAX_PATH] = TEXT("<unknown>");
+
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, proc_id);
+
+        if(NULL != hProcess)
+        {
+            HMODULE hMod;
+            DWORD cbNeeded;
+
+            if(EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded))
+            {
+                GetModuleBaseName(hProcess, hMod, proc_name, sizeof(proc_name)/sizeof(TCHAR));
+            }
+
+            log->info("%lu\t%s", proc_id, proc_name);
+        }
+    }
+}
+
+void dm_core::run_process(char const* const path)
 {
     log->info("core: start_process: path [%s]", path);
 
@@ -262,11 +306,9 @@ void dm_core::start_process(char const* const path)
     }
 }
 
-bool dm_core::attach_to_process(UINT32 uuid)
+void dm_core::attach_to_process(UINT32 uuid)
 {
     log->info("core: attach_to_process: UUID [%lu]", uuid);
-
-    return false;
 }
 
 void dm_core::pause_process()
