@@ -9,13 +9,13 @@ dm_reg::~dm_reg()
 {
 }
 
-UINT32 dm_reg::read_u32(PROCESS_INFORMATION* proc_info, UINT64 addr)
+UINT32 dm_reg::read_u32(HANDLE proc_handle, UINT64 addr)
 {
     log->info("reg: read_u32: addr [0x%llx]", addr);
 
     UINT32 reg_mem;
     SIZE_T read_size = 0;
-    if(ReadProcessMemory(proc_info->hProcess, (LPCVOID)addr, &reg_mem, 4, &read_size))
+    if(ReadProcessMemory(proc_handle, (LPCVOID)addr, &reg_mem, 4, &read_size))
     {
         log->info("val read [%d]", reg_mem);
     }
@@ -27,12 +27,12 @@ UINT32 dm_reg::read_u32(PROCESS_INFORMATION* proc_info, UINT64 addr)
     return reg_mem;
 }
 
-void dm_reg::write_u32(PROCESS_INFORMATION* proc_info, UINT64 addr, UINT32 val)
+void dm_reg::write_u32(HANDLE proc_handle, UINT64 addr, UINT32 val)
 {
     log->info("reg: write_u32: addr [0x%llx] val [%lu]", addr, val);
 
     SIZE_T written = 0;
-    if(WriteProcessMemory(proc_info->hProcess, (LPVOID)addr, &val, 4, &written))
+    if(WriteProcessMemory(proc_handle, (LPVOID)addr, &val, 4, &written))
     {
         log->info("write complete");
     }

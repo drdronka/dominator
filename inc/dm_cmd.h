@@ -67,6 +67,14 @@ class dm_cmd_proc_run : dm_cmd
         char* path;
 };
 
+class dm_cmd_proc_attach : dm_cmd
+{
+    public:
+        dm_cmd_proc_attach(DWORD pid);
+        ~dm_cmd_proc_attach();
+
+        DWORD pid;
+};
 
 class dm_cmd_proc_start : dm_cmd
 {

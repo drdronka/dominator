@@ -20,15 +20,16 @@ class dm_core
         
         void show_process_list();
         void run_process(char const* const path);
-        void attach_to_process(UINT32 uuid);
+        void attach_to_process(UINT32 pid);
         void pause_process();
         void resume_process();
 
     protected:
-        bool process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
+        bool process_debug_event(DEBUG_EVENT* event, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
 
         STARTUPINFOA startup_info; 
         PROCESS_INFORMATION proc_info; 
+        HANDLE proc_handle;
         CREATE_PROCESS_DEBUG_INFO proc_debug_info;
 
         dm_log* log;

@@ -20,6 +20,7 @@ dm_core::dm_core(dm_log* log)
 
     cmd_thread = NULL;
     cmd_thread_id = 0;
+    proc_handle = 0;
     attached = false;
 }
 
@@ -112,6 +113,10 @@ void dm_core::cmd_loop()
                         run_process(((dm_cmd_proc_run*)cmd)->path);
                         break;
 
+                    case dm_cmd_type::proc_attach:
+                        attach_to_process(((dm_cmd_proc_attach*)cmd)->pid);
+                        break;                        
+
                     case dm_cmd_type::proc_stop:
                         pause_process();
                         break;
@@ -121,19 +126,19 @@ void dm_core::cmd_loop()
                         break;
 
                     case dm_cmd_type::reg_read_u32:
-                        reg->read_u32(&proc_info, ((dm_cmd_reg_read_u32*)cmd)->addr);
+                        reg->read_u32(proc_handle, ((dm_cmd_reg_read_u32*)cmd)->addr);
                         break;
                     
                     case dm_cmd_type::reg_write_u32:
-                        reg->write_u32(&proc_info, ((dm_cmd_reg_write_u32*)cmd)->addr, ((dm_cmd_reg_write_u32*)cmd)->val);
+                        reg->write_u32(proc_handle, ((dm_cmd_reg_write_u32*)cmd)->addr, ((dm_cmd_reg_write_u32*)cmd)->val);
                         break;
 
                     case dm_cmd_type::scan_find_u32:
-                        scan->find_u32(&proc_info, ((dm_cmd_scan_find_u32*)cmd)->val);
+                        scan->find_u32(proc_handle, ((dm_cmd_scan_find_u32*)cmd)->val);
                         break;
 
                     case dm_cmd_type::scan_replace_u32:
-                        scan->replace_u32(&proc_info, ((dm_cmd_scan_replace_u32*)cmd)->val);
+                        scan->replace_u32(proc_handle, ((dm_cmd_scan_replace_u32*)cmd)->val);
                         break;
 
                     case dm_cmd_type::scan_reset_u32:
@@ -148,15 +153,18 @@ void dm_core::cmd_loop()
         }
 
         // handle process events
-        DEBUG_EVENT debug_event = {0};
-        while(WaitForDebugEvent(&debug_event, 10))
+        if(attached)
         {
-            process_debug_event(&debug_event, &proc_info, &proc_debug_info);
+            DEBUG_EVENT debug_event = {0};
+            while(WaitForDebugEvent(&debug_event, 10))
+            {
+                process_debug_event(&debug_event, &proc_debug_info);
 
-            if(!ContinueDebugEvent(debug_event.dwProcessId, debug_event.dwThreadId, DBG_CONTINUE))
-            {   
-                log->error("continue debug event failed");
-            }       
+                if(!ContinueDebugEvent(debug_event.dwProcessId, debug_event.dwThreadId, DBG_CONTINUE))
+                {   
+                    log->error("continue debug event failed");
+                }       
+            }
         }
     }
 }
@@ -173,7 +181,7 @@ const char dm_core::debug_event_id_name[][27] = {
     "OUTPUT_DEBUG_STRING_EVENT",  // 8
     "RIP_EVENT" };                // 9
             
-bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_info, CREATE_PROCESS_DEBUG_INFO* proc_debug_info)
+bool dm_core::process_debug_event(DEBUG_EVENT* event, CREATE_PROCESS_DEBUG_INFO* proc_debug_info)
 {
     if(event->dwDebugEventCode < EXCEPTION_DEBUG_EVENT || event->dwDebugEventCode > RIP_EVENT)
     {
@@ -212,7 +220,7 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, PROCESS_INFORMATION* proc_
             char* buff = new char[event->u.DebugString.nDebugStringLength * 2];
             
             ReadProcessMemory(
-                proc_info->hProcess,         // HANDLE to Debuggee
+                proc_handle,         // HANDLE to Debuggee
                 ds_info->lpDebugStringData,  // Target process' valid pointer
                 buff,                        // Copy to this address space
                 ds_info->nDebugStringLength,
@@ -297,6 +305,7 @@ void dm_core::run_process(char const* const path)
         }
         else
         {
+            proc_handle = proc_info.hProcess;
             this->attached = true;
         }
     }
@@ -306,9 +315,31 @@ void dm_core::run_process(char const* const path)
     }
 }
 
-void dm_core::attach_to_process(UINT32 uuid)
+void dm_core::attach_to_process(UINT32 pid)
 {
-    log->info("core: attach_to_process: UUID [%lu]", uuid);
+    log->info("core: attach_to_process: UUID [%lu]", pid);
+
+    proc_handle = OpenProcess(
+        PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
+
+    if(!proc_handle)
+    {
+        log->error("failed to open process [%lu]: winapi error [%d]", pid, GetLastError());
+    }
+    else
+    {
+        log->info("attached");
+        attached = true;
+
+        if(!DebugActiveProcess(pid))
+        {
+            log->error("failed to debug process [%lu]: winapi error [%d]", pid, GetLastError());
+        }
+        else
+        {
+            log->info("debug enabled");
+        }
+    }
 }
 
 void dm_core::pause_process()
@@ -321,6 +352,4 @@ void dm_core::pause_process()
 void dm_core::resume_process()
 {
     log->info("core: resume_process");
-
-    
 }

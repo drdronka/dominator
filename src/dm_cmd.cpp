@@ -100,6 +100,17 @@ dm_cmd_proc_run::dm_cmd_proc_run(char const* const path)
     attached = false;
 }
 
+dm_cmd_proc_attach::dm_cmd_proc_attach(DWORD pid)
+{
+    this->pid = pid;
+    type = dm_cmd_type::proc_attach;
+    attached = false;
+}
+
+dm_cmd_proc_attach::~dm_cmd_proc_attach()
+{
+}
+
 dm_cmd_proc_run::~dm_cmd_proc_run()
 {
     delete[] path;

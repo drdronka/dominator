@@ -14,7 +14,7 @@ dm_scan::~dm_scan()
 {
 }
 
-void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
+void dm_scan::find_u32(HANDLE proc_handle, UINT32 wanted)
 {
     log->info("scan: find_u32: val [%lu]", wanted);
 
@@ -25,22 +25,29 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
 
     if(regs.size() == 0)
     {
-        while(VirtualQueryEx(proc_info->hProcess, base_addr, &mem_info, sizeof(mem_info)))
+        while(VirtualQueryEx(proc_handle, base_addr, &mem_info, sizeof(mem_info)))
         {
             if(mem_info.State == MEM_COMMIT)
             {
                 UINT32* reg_mem = (UINT32*)malloc(mem_info.RegionSize);
                 SIZE_T read_size = 0;
-                ReadProcessMemory(proc_info->hProcess, mem_info.BaseAddress, reg_mem, mem_info.RegionSize, &read_size);
-                //printf("region read: size [%x]\n", read_size);
 
-                for(UINT32 n = 0; n < read_size / 4; n++)
+                if(!ReadProcessMemory(proc_handle, mem_info.BaseAddress, reg_mem, mem_info.RegionSize, &read_size))
                 {
-                    if(reg_mem[n] == wanted)
+                    log->error(
+                        "failed to read region [%lu] addr [0x%llx] size [0x%lx]: winapi error [%d]", 
+                        reg_num, mem_info.BaseAddress, mem_info.RegionSize, GetLastError());
+                }
+                else
+                {
+                    for(UINT32 n = 0; n < read_size / 4; n++)
                     {
-                        UINT64 wanted_addr = (UINT64)(mem_info.BaseAddress + (n * 4));
-                        regs.push_back(wanted_addr);
-                        log->info("val [%lu] found at [0x%llx]", wanted, wanted_addr);
+                        if(reg_mem[n] == wanted)
+                        {
+                            UINT64 wanted_addr = (UINT64)(mem_info.BaseAddress + (n * 4));
+                            regs.push_back(wanted_addr);
+                            log->info("val [%lu] found at [0x%llx]", wanted, wanted_addr);
+                        }
                     }
                 }
 
@@ -62,7 +69,7 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
             UINT64 reg_addr = regs[n];
             SIZE_T read_size = 0;
 
-            if(!ReadProcessMemory(proc_info->hProcess, (PVOID*)reg_addr, &reg, 4, &read_size))
+            if(!ReadProcessMemory(proc_handle, (PVOID*)reg_addr, &reg, 4, &read_size))
             {
                 log->error("ReadProcessMemory failed: winapi error [%d]", GetLastError());
                 return;
@@ -91,7 +98,7 @@ void dm_scan::find_u32(PROCESS_INFORMATION* proc_info, UINT32 wanted)
     }
 }
 
-void dm_scan::replace_u32(PROCESS_INFORMATION* proc_info, UINT32 val)
+void dm_scan::replace_u32(HANDLE proc_handle, UINT32 val)
 {
     log->info("scan: replace_u32: val [%lu]", val);
 
@@ -99,7 +106,7 @@ void dm_scan::replace_u32(PROCESS_INFORMATION* proc_info, UINT32 val)
     {
         for(size_t n = 0; n < regs.size(); n++)
         {
-            reg->write_u32(proc_info, regs[n], val);
+            reg->write_u32(proc_handle, regs[n], val);
         }
     }
     else
