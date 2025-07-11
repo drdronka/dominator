@@ -26,18 +26,18 @@ dm_core::dm_core(dm_log* log)
 
 dm_core::~dm_core()
 {
-    stop_cmd_loop();
+    cmd_loop_stop();
     delete reg;
     delete scan;
     delete cmd_list;
 }
 
-void dm_core::add_cmd(dm_cmd* cmd)
+void dm_core::cmd_add(dm_cmd* cmd)
 {
     cmd_list->add(cmd);
 }
 
-void dm_core::start_cmd_loop()
+void dm_core::cmd_loop_start()
 {
     if(!cmd_thread)
     {
@@ -55,11 +55,11 @@ void dm_core::start_cmd_loop()
     }
 }
 
-void dm_core::stop_cmd_loop()
+void dm_core::cmd_loop_stop()
 {
     if(cmd_thread)
     {
-        add_cmd((dm_cmd*)new dm_cmd_exit_cmd_loop());
+        cmd_add((dm_cmd*)new dm_cmd_exit_cmd_loop());
 
         DWORD result;
         do
@@ -106,23 +106,23 @@ void dm_core::cmd_loop()
                         break;
 
                     case dm_cmd_type::proc_show:
-                        show_process_list();
+                        proc_show_list();
                         break;
 
                     case dm_cmd_type::proc_run:
-                        run_process(((dm_cmd_proc_run*)cmd)->path);
+                        proc_run(((dm_cmd_proc_run*)cmd)->path);
                         break;
 
                     case dm_cmd_type::proc_attach:
-                        attach_to_process(((dm_cmd_proc_attach*)cmd)->pid);
+                        proc_attach(((dm_cmd_proc_attach*)cmd)->pid);
                         break;                        
 
                     case dm_cmd_type::proc_stop:
-                        pause_process();
+                        proc_stop();
                         break;
 
                     case dm_cmd_type::proc_start:
-                        resume_process();
+                        proc_start();
                         break;
 
                     case dm_cmd_type::reg_read_u32:
@@ -241,7 +241,7 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, CREATE_PROCESS_DEBUG_INFO*
     return true;
 }
 
-void dm_core::show_process_list()
+void dm_core::proc_show_list()
 {
     log->info("core: show_process_list");
 
@@ -278,7 +278,7 @@ void dm_core::show_process_list()
     }
 }
 
-void dm_core::run_process(char const* const path)
+void dm_core::proc_run(char const* const path)
 {
     log->info("core: start_process: path [%s]", path);
 
@@ -318,7 +318,7 @@ void dm_core::run_process(char const* const path)
     }
 }
 
-void dm_core::attach_to_process(UINT32 pid)
+void dm_core::proc_attach(UINT32 pid)
 {
     log->info("core: attach_to_process: UUID [%lu]", pid);
 
@@ -345,14 +345,14 @@ void dm_core::attach_to_process(UINT32 pid)
     }
 }
 
-void dm_core::pause_process()
+void dm_core::proc_stop()
 {
     log->info("core: pause_process");
 
     DebugBreakProcess(proc_handle);
 }
 
-void dm_core::resume_process()
+void dm_core::proc_start()
 {
     log->info("core: resume_process");
 }

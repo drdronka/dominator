@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 
     if(argc > 1)
     {
-        core->add_cmd((dm_cmd*)new dm_cmd_proc_run(argv[1]));
+        core->cmd_add((dm_cmd*)new dm_cmd_proc_run(argv[1]));
     }
     
     dm_console* console = new dm_console(log, core);

@@ -22,7 +22,7 @@ void dm_console::run()
 {
     log->info("dominator cmd line");
 
-    core->start_cmd_loop();
+    core->cmd_loop_start();
 
     bool loop_exit = false;
     while(!loop_exit)
@@ -43,58 +43,58 @@ void dm_console::run()
         if(is_arg(cmd, "run"))
         {
             strip(input + strlen("run "), arg1);
-            core->add_cmd((dm_cmd*)new dm_cmd_proc_run(arg1));
+            core->cmd_add((dm_cmd*)new dm_cmd_proc_run(arg1));
         }
         else if(is_arg(cmd, "attach"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_proc_attach(strtoul(arg1, NULL, 0)));
+                core->cmd_add((dm_cmd*)new dm_cmd_proc_attach(strtoul(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "show"))
         {
-            core->add_cmd((dm_cmd*)new dm_cmd_proc_show());
+            core->cmd_add((dm_cmd*)new dm_cmd_proc_show());
         }
         else if(is_arg(cmd, "stop"))
         {
-            core->add_cmd((dm_cmd*)new dm_cmd_proc_stop());
+            core->cmd_add((dm_cmd*)new dm_cmd_proc_stop());
         }
         else if(is_arg(cmd, "start"))
         {
-            core->add_cmd((dm_cmd*)new dm_cmd_proc_start());
+            core->cmd_add((dm_cmd*)new dm_cmd_proc_start());
         }
         else if(is_arg(cmd, "ru32"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_reg_read_u32(strtoull(arg1, NULL, 0)));
+                core->cmd_add((dm_cmd*)new dm_cmd_reg_read_u32(strtoull(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "wu32"))
         {
             if(get_arg(input, 1, arg1) && get_arg(input, 2, arg2))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_reg_write_u32(strtoul(arg2, NULL, 0), strtoull(arg1, NULL, 0)));
+                core->cmd_add((dm_cmd*)new dm_cmd_reg_write_u32(strtoul(arg2, NULL, 0), strtoull(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "fu32"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_scan_find_u32(strtoul(arg1, NULL, 0)));
+                core->cmd_add((dm_cmd*)new dm_cmd_scan_find_u32(strtoul(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "fu32w"))
         {
             if(get_arg(input, 1, arg1))
             {
-                core->add_cmd((dm_cmd*)new dm_cmd_scan_replace_u32(strtoul(arg1, NULL, 0)));
+                core->cmd_add((dm_cmd*)new dm_cmd_scan_replace_u32(strtoul(arg1, NULL, 0)));
             }
         }
         else if(is_arg(cmd, "fu32r"))
         {
-            core->add_cmd((dm_cmd*)new dm_cmd_scan_reset_u32());
+            core->cmd_add((dm_cmd*)new dm_cmd_scan_reset_u32());
         }
         else if(is_arg(cmd, "ll"))
         {
@@ -138,7 +138,7 @@ void dm_console::run()
         }
         else if(is_arg(cmd, "exit"))
         {
-            core->stop_cmd_loop();
+            core->cmd_loop_stop();
             loop_exit = true;
         }
         else 

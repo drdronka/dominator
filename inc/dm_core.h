@@ -13,16 +13,16 @@ class dm_core
         dm_core(dm_log* log_i);
         ~dm_core();
 
-        void add_cmd(dm_cmd* cmd);
-        void start_cmd_loop();
-        void stop_cmd_loop();
+        void cmd_add(dm_cmd* cmd);
+        void cmd_loop_start();
+        void cmd_loop_stop();
         void cmd_loop(); // started by dm_core_cmd_loop(), not to be used directly
         
-        void show_process_list();
-        void run_process(char const* const path);
-        void attach_to_process(UINT32 pid);
-        void pause_process();
-        void resume_process();
+        void proc_show_list();
+        void proc_run(char const* const path);
+        void proc_attach(UINT32 pid);
+        void proc_stop();
+        void proc_start();
 
     protected:
         bool process_debug_event(DEBUG_EVENT* event, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
