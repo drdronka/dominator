@@ -284,6 +284,9 @@ void dm_core::run_process(char const* const path)
 
     if(!attached)
     {
+        STARTUPINFOA startup_info; 
+        PROCESS_INFORMATION proc_info; 
+
         ZeroMemory(&proc_info, sizeof(proc_info));
         ZeroMemory(&startup_info, sizeof(startup_info));
         startup_info.cb = sizeof(startup_info);
@@ -346,7 +349,7 @@ void dm_core::pause_process()
 {
     log->info("core: pause_process");
 
-    DebugBreakProcess(proc_info.hProcess);
+    DebugBreakProcess(proc_handle);
 }
 
 void dm_core::resume_process()

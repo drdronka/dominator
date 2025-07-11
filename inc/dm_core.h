@@ -27,8 +27,6 @@ class dm_core
     protected:
         bool process_debug_event(DEBUG_EVENT* event, CREATE_PROCESS_DEBUG_INFO* proc_debug_info);
 
-        STARTUPINFOA startup_info; 
-        PROCESS_INFORMATION proc_info; 
         HANDLE proc_handle;
         CREATE_PROCESS_DEBUG_INFO proc_debug_info;
 
