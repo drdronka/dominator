@@ -21,7 +21,6 @@ dm_core::dm_core(dm_log* log)
     cmd_thread = NULL;
     cmd_thread_id = 0;
     proc_handle = 0;
-    attached = false;
 }
 
 dm_core::~dm_core()
@@ -93,7 +92,7 @@ void dm_core::cmd_loop()
         dm_cmd* cmd = cmd_list->get();
         if(cmd != nullptr)
         {
-            if(cmd->attached && !attached)
+            if(cmd->attached && !proc_handle)
             {
                 log->error("not attached");
             }
@@ -153,7 +152,7 @@ void dm_core::cmd_loop()
         }
 
         // handle process events
-        if(attached)
+        if(proc_handle)
         {
             DEBUG_EVENT debug_event = {0};
             while(WaitForDebugEvent(&debug_event, 10))
@@ -243,7 +242,7 @@ bool dm_core::process_debug_event(DEBUG_EVENT* event, CREATE_PROCESS_DEBUG_INFO*
 
 void dm_core::proc_show_list()
 {
-    log->info("core: show_process_list");
+    log->info("core: proc_show_list");
 
     DWORD proc_list[PROC_LIST_SIZE];
     DWORD proc_list_size = 0;
@@ -280,9 +279,9 @@ void dm_core::proc_show_list()
 
 void dm_core::proc_run(char const* const path)
 {
-    log->info("core: start_process: path [%s]", path);
+    log->info("core: proc_run: path [%s]", path);
 
-    if(!attached)
+    if(!proc_handle)
     {
         STARTUPINFOA startup_info; 
         PROCESS_INFORMATION proc_info; 
@@ -304,12 +303,11 @@ void dm_core::proc_run(char const* const path)
             NULL, 
             &startup_info, &proc_info))
         {
-            log->error("failed to create process [%s]", path);
+            log->error("failed to create process [%s]: winapi error [%d]", path, GetLastError());
         }
         else
         {
             proc_handle = proc_info.hProcess;
-            this->attached = true;
         }
     }
     else
@@ -320,7 +318,7 @@ void dm_core::proc_run(char const* const path)
 
 void dm_core::proc_attach(UINT32 pid)
 {
-    log->info("core: attach_to_process: UUID [%lu]", pid);
+    log->info("core: proc_attach: UUID [%lu]", pid);
 
     proc_handle = OpenProcess(
         PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
@@ -332,7 +330,6 @@ void dm_core::proc_attach(UINT32 pid)
     else
     {
         log->info("attached");
-        attached = true;
 
         if(!DebugActiveProcess(pid))
         {
@@ -347,12 +344,12 @@ void dm_core::proc_attach(UINT32 pid)
 
 void dm_core::proc_stop()
 {
-    log->info("core: pause_process");
+    log->info("core: proc_stop");
 
     DebugBreakProcess(proc_handle);
 }
 
 void dm_core::proc_start()
 {
-    log->info("core: resume_process");
+    log->info("core: proc_start");
 }

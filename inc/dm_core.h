@@ -28,7 +28,6 @@ class dm_core
 
         HANDLE proc_handle;
         CREATE_PROCESS_DEBUG_INFO proc_debug_info;
-        bool attached;
 
         dm_log* log;
         dm_scan* scan;
